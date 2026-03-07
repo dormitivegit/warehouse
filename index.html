@@ -628,6 +628,38 @@ function App(){
           </div>
         </div>
 
+        {/* 危险操作区 */}
+        <div className="settings-section" style={{border:`1px solid ${C.redBd}`}}>
+          <div className="settings-section-title" style={{color:C.red}}>⚠ 危险操作</div>
+          <div className="settings-row">
+            <div>
+              <div className="settings-label">清空全部流水记录</div>
+              <div className="settings-desc">删除所有入仓/出仓记录，库存归零，款式资料保留。用于重新登记库存。</div>
+            </div>
+            <button onClick={()=>requireAdmin(()=>{
+              if(!confirm("确认清空全部流水记录？\n\n⚠ 所有入仓/出仓记录将被删除，所有库存归零。\n款式资料不受影响，可重新登记库存。\n\n此操作不可撤销！"))return;
+              updateLogs([]);
+              showToast("✓ 已清空全部流水记录，库存已归零");
+            })} style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:10,padding:"9px 16px",color:C.red,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+              🗑 清空流水
+            </button>
+          </div>
+          <div className="settings-row">
+            <div>
+              <div className="settings-label">清空全部数据</div>
+              <div className="settings-desc">删除所有款式、流水记录，完全重置系统。</div>
+            </div>
+            <button onClick={()=>requireAdmin(()=>{
+              if(!confirm("确认完全重置系统？\n\n⚠ 所有款式和流水记录将被全部删除！\n系统将恢复到初始状态。\n\n此操作绝对不可撤销！"))return;
+              updateShoes([]);
+              updateLogs([]);
+              showToast("✓ 已完全重置，请重新添加款式");
+            })} style={{background:"#7f1d1d",border:"1px solid #991b1b",borderRadius:10,padding:"9px 16px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+              💥 完全重置
+            </button>
+          </div>
+        </div>
+
         {/* 系统信息 */}
         <div className="settings-section">
           <div className="settings-section-title">ℹ 系统信息</div>
