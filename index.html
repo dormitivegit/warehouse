@@ -269,6 +269,91 @@ function App(){
     );
   }
 
+  // ───────── 品牌库存+尺码汇总组件（折叠展开） ─────────
+  function BrandAndSize({inv,brandMap,sizeTotal,isMobile,lowThresh,shoeTotal,setDetailShoe,getSzColor}){
+    const[expanded,setExpanded]=useState({});
+    function toggle(brand){setExpanded(e=>({...e,[brand]:!e[brand]}));}
+    return(
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 320px",gap:14,marginBottom:24,alignItems:"start"}}>
+        {/* 左：品牌折叠列表 */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+          <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase"}}>品牌库存</div>
+            <div style={{fontSize:10,color:C.text3}}>点击品牌展开款式</div>
+          </div>
+          {Object.entries(brandMap).map(([brand,info],bi)=>{
+            const isOpen=!!expanded[brand];
+            const brandSoldOut=info.shoes.some(sh=>SIZES.some(sz=>(inv[sh.id]?.[sz]||0)===0));
+            const brandLow=info.shoes.some(sh=>SIZES.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;}));
+            return(
+              <div key={brand} style={{borderBottom:bi<Object.keys(brandMap).length-1?`1px solid ${C.border}`:"none"}}>
+                {/* 品牌行 — 点击折叠/展开 */}
+                <div onClick={()=>toggle(brand)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 18px",cursor:"pointer",background:isOpen?"#f9f9f7":C.surface,transition:"background 0.15s"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>{brand}</span>
+                    <span style={{fontSize:11,color:C.text3}}>{info.shoes.length}款</span>
+                    {brandSoldOut&&<span style={{fontSize:9,color:C.red,background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:4,padding:"1px 5px",fontWeight:600}}>断码</span>}
+                    {brandLow&&!brandSoldOut&&<span style={{fontSize:9,color:C.yellow,background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:4,padding:"1px 5px",fontWeight:600}}>低库</span>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:20,fontWeight:800,color:C.text}}>{info.total}<span style={{fontSize:10,color:C.text3,marginLeft:2}}>双</span></span>
+                    <span style={{fontSize:12,color:C.text3,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+                  </div>
+                </div>
+                {/* 展开的款式列表 */}
+                {isOpen&&(
+                  <div style={{background:"#f9f9f7",borderTop:`1px solid ${C.border}`,padding:"8px 14px 12px"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                      {info.shoes.map(sh=>{
+                        const tot=shoeTotal(sh.id);
+                        const hasSoldOut=SIZES.some(sz=>(inv[sh.id]?.[sz]||0)===0);
+                        const hasLow=SIZES.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;});
+                        return(
+                          <div key={sh.id} onClick={()=>setDetailShoe(sh)} style={{display:"flex",alignItems:"center",gap:8,background:C.surface,borderRadius:9,padding:"7px 10px",cursor:"pointer",border:`1px solid ${hasSoldOut?"#fca5a5":C.border}`}}>
+                            {sh.photoUrl
+                              ?<img src={sh.photoUrl} alt="" loading="lazy" style={{width:32,height:32,objectFit:"cover",borderRadius:6,flexShrink:0,border:`1px solid ${C.border}`}}/>
+                              :<div style={{width:32,height:32,borderRadius:6,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>👟</div>
+                            }
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:12,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sh.name}</div>
+                              <div style={{fontSize:10,color:C.text3}}>{sh.color}</div>
+                            </div>
+                            <div style={{textAlign:"right",flexShrink:0}}>
+                              <div style={{fontSize:14,fontWeight:800,color:hasSoldOut?C.red:hasLow?C.yellow:C.text}}>{tot}</div>
+                              {hasSoldOut&&<div style={{fontSize:8,color:C.red,fontWeight:600}}>断码</div>}
+                              {hasLow&&!hasSoldOut&&<div style={{fontSize:8,color:C.yellow,fontWeight:600}}>低库</div>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* 右：全款尺码汇总 — 固定宽度独立列 */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>全款尺码汇总</div>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4,marginBottom:10}}>
+            {SIZES.map(sz=><SzCell key={sz} qty={sizeTotal[sz]} sz={sz}/>)}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4,marginBottom:16}}>
+            {SIZES.map(sz=>{const max=Math.max(...Object.values(sizeTotal),1);const pct=Math.round((sizeTotal[sz]/max)*100);const col=getSzColor(sizeTotal[sz]);return(<div key={sz} style={{height:28,background:"#f0f0ec",borderRadius:4,overflow:"hidden",display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:`${pct}%`,background:col,borderRadius:4,minHeight:sizeTotal[sz]>0?3:0}}/></div>);})}
+          </div>
+          {/* 尺码预警汇总 */}
+          {SIZES.filter(sz=>sizeTotal[sz]===0).length>0&&(
+            <div style={{fontSize:10,color:C.red,fontWeight:500,marginBottom:6}}>⚠ 全断码：{SIZES.filter(sz=>sizeTotal[sz]===0).join(" / ")} 码</div>
+          )}
+          {SIZES.filter(sz=>sizeTotal[sz]>0&&sizeTotal[sz]<=lowThresh*2).length>0&&(
+            <div style={{fontSize:10,color:C.yellow,fontWeight:500}}>▲ 全款低库：{SIZES.filter(sz=>sizeTotal[sz]>0&&sizeTotal[sz]<=lowThresh*2).join(" / ")} 码</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function SyncBadge(){
     const base={fontSize:10,display:"flex",alignItems:"center",gap:4};
     if(syncStatus==="offline")return<div style={{...base,color:C.text3}}><span>💾</span><span>本地模式</span></div>;
@@ -298,57 +383,8 @@ function App(){
           ))}
         </div>
 
-        {/* 品牌库存 — 含款式名称和小图 */}
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:24}}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>品牌库存</div>
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {Object.entries(brandMap).map(([brand,info])=>(
-                <div key={brand}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
-                    <span style={{fontSize:12,fontWeight:700,color:C.text2}}>{brand}</span>
-                    <span style={{fontSize:18,fontWeight:800,color:C.text}}>{info.total}<span style={{fontSize:10,color:C.text3,marginLeft:3}}>双</span></span>
-                  </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                    {info.shoes.map(sh=>{
-                      const tot=shoeTotal(sh.id);
-                      const hasSoldOut=SIZES.some(sz=>(inv[sh.id]?.[sz]||0)===0);
-                      const hasLow=SIZES.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;});
-                      return(
-                        <div key={sh.id} onClick={()=>setDetailShoe(sh)} style={{display:"flex",alignItems:"center",gap:8,background:C.bg,borderRadius:9,padding:"7px 8px",cursor:"pointer",border:`1px solid ${hasSoldOut?"#fca5a5":C.border}`}}>
-                          {sh.photoUrl
-                            ?<img src={sh.photoUrl} alt="" loading="lazy" style={{width:34,height:34,objectFit:"cover",borderRadius:7,flexShrink:0,border:`1px solid ${C.border}`}}/>
-                            :<div style={{width:34,height:34,borderRadius:7,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👟</div>
-                          }
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:12,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sh.name}</div>
-                            <div style={{fontSize:10,color:C.text3}}>{sh.color}</div>
-                          </div>
-                          <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{fontSize:15,fontWeight:800,color:hasSoldOut?C.red:hasLow?C.yellow:C.text}}>{tot}</div>
-                            {hasSoldOut&&<div style={{fontSize:8,color:C.red,fontWeight:600}}>断码</div>}
-                            {hasLow&&!hasSoldOut&&<div style={{fontSize:8,color:C.yellow,fontWeight:600}}>低库</div>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 全款尺码汇总 */}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>全款尺码汇总</div>
-            <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4,marginBottom:10}}>
-              {SIZES.map(sz=><SzCell key={sz} qty={sizeTotal[sz]} sz={sz}/>)}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4}}>
-              {SIZES.map(sz=>{const max=Math.max(...Object.values(sizeTotal),1);const pct=Math.round((sizeTotal[sz]/max)*100);const col=getSzColor(sizeTotal[sz]);return(<div key={sz} style={{height:32,background:"#f0f0ec",borderRadius:4,overflow:"hidden",display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:`${pct}%`,background:col,borderRadius:4,minHeight:sizeTotal[sz]>0?3:0}}/></div>);})}
-            </div>
-          </div>
-        </div>
+        {/* 品牌库存（折叠）+ 全款尺码汇总 — 三列布局 */}
+        <BrandAndSize inv={inv} brandMap={brandMap} sizeTotal={sizeTotal} isMobile={isMobile} lowThresh={lowThresh} shoeTotal={shoeTotal} setDetailShoe={setDetailShoe} getSzColor={getSzColor}/>
 
         {/* 搜索 + 排序 */}
         <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
