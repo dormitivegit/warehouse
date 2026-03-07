@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仓库管理系统</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:#f5f5f0;font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;color:#1a1a1a;}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1;}
+  select option{background:#fff;color:#1a1a1a;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:#f0f0ec;}
+  ::-webkit-scrollbar-thumb{background:#d0d0c8;border-radius:3px;}
+  .card-hover:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08);transform:translateY(-1px);}
+  .card-hover{transition:box-shadow 0.2s,transform 0.2s;}
+  .btn-hover:hover{opacity:0.85;}
+  .photo-upload:hover{border-color:#888 !important;background:#f0f0ec !important;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{animation:spin 1s linear infinite;display:inline-block;}
+  @keyframes fadeIn{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+  .zoom-in{animation:fadeIn 0.15s ease-out;}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  .slide-up{animation:slideUp 0.2s ease-out;}
+
+  .app-shell{display:flex;min-height:100vh;}
+  .sidebar{width:220px;flex-shrink:0;background:#fff;border-right:1px solid #e8e8e2;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid #f0f0ec;}
+  .sidebar-logo .en{font-size:9px;letter-spacing:4px;color:#999990;text-transform:uppercase;margin-bottom:4px;}
+  .sidebar-logo .zh{font-size:20px;font-weight:800;}
+  .sidebar-nav{padding:12px 10px;flex:1;}
+  .sidebar-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;font-size:13px;font-weight:500;color:#666660;border:none;background:none;width:100%;text-align:left;transition:background 0.15s,color 0.15s;}
+  .sidebar-nav-item:hover{background:#f5f5f0;color:#1a1a1a;}
+  .sidebar-nav-item.active{background:#eff6ff;color:#2563eb;font-weight:700;}
+  .sidebar-nav-item .nav-icon{font-size:16px;width:20px;text-align:center;}
+  .sidebar-bottom{padding:12px 10px 20px;border-top:1px solid #f0f0ec;}
+  .main-content{flex:1;min-width:0;padding:28px 32px;max-width:1100px;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+  .page-title{font-size:22px;font-weight:800;}
+  .page-subtitle{font-size:12px;color:#999990;margin-top:3px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+  .stat-card{background:#fff;border:1px solid #e8e8e2;border-radius:14px;padding:16px 18px;}
+  .stat-label{font-size:10px;color:#999990;letter-spacing:1px;margin-bottom:8px;}
+  .stat-value{font-size:28px;font-weight:800;line-height:1;}
+  .stat-unit{font-size:10px;color:#999990;margin-top:4px;}
+  .shoe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+  .log-table{width:100%;border-collapse:collapse;}
+  .log-table th{font-size:10px;color:#999990;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:2px solid #e8e8e2;background:#f9f9f7;}
+  .log-table td{padding:11px 12px;border-bottom:1px solid #f0f0ec;font-size:13px;vertical-align:middle;}
+  .log-table tr:hover td{background:#fafaf8;}
+  .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e2;padding:8px 0 16px;z-index:50;}
+  .mobile-nav-inner{display:flex;max-width:480px;margin:0 auto;}
+  .mobile-nav-btn{flex:1;background:none;border:none;cursor:pointer;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:3px;}
+
+  @media(max-width:768px){
+    .sidebar{display:none !important;}
+    .main-content{padding:14px 14px 84px;max-width:none;}
+    .mobile-nav{display:block;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .stat-grid .stat-span2{grid-column:1/-1;}
+    .shoe-grid{grid-template-columns:1fr;}
+    .page-header{margin-bottom:16px;}
+    .page-title{font-size:18px;}
+  }
+  @media(min-width:769px) and (max-width:1024px){
+    .stat-grid{grid-template-columns:repeat(3,1fr);}
+    .main-content{padding:24px;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useCallback,useRef,useEffect}=React;
+const CLOUD_CONFIG={binId:"69a92606ae596e708f61143c",masterKey:"$2a$10$3YSGRJC241CXsBpeivsTP.NHutZ7G.qgoZyFYBB2IJs4CX/OHeno."};
+const CLOUD_ON=CLOUD_CONFIG.binId!=="YOUR_BIN_ID_HERE";
+const CDN={cloudName:"dvkf38yoa",uploadPreset:"wms_unsigned"};
+const ADMIN_PASSWORD="1234";
+const SIZES=[36,37,38,39,40,41,42,43,44];
+const KEY_SHOES="wms_shoes_v3",KEY_LOGS="wms_logs_v3",KEY_AUTH="wms_auth_v1";
+const DEFAULT_SHOES=[
+  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:""},
+  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:""},
+  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:""},
+  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:""},
+  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:""},
+  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:""},
+  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:""},
+];
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtTime(iso){return new Date(iso).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});}
+function loadLS(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch{return def;}}
+function saveLS(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
+async function cloudFetch(){const res=await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.binId}/latest`,{headers:{"X-Master-Key":CLOUD_CONFIG.masterKey}});if(!res.ok)throw new Error("fetch failed");return(await res.json()).record;}
+async function cloudSave(record){const res=await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":CLOUD_CONFIG.masterKey,"X-Bin-Versioning":"false"},body:JSON.stringify(record)});if(!res.ok)throw new Error("save failed");}
+async function uploadToCloudinary(file){
+  const blob=await new Promise(resolve=>{const reader=new FileReader();reader.onload=e=>{const img=new Image();img.onload=()=>{const MAX=800;let w=img.width,h=img.height;if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;canvas.getContext("2d").drawImage(img,0,0,w,h);canvas.toBlob(b=>resolve(b),"image/jpeg",0.82);};img.src=e.target.result;};reader.readAsDataURL(file);});
+  const fd=new FormData();fd.append("file",blob);fd.append("upload_preset",CDN.uploadPreset);fd.append("folder","wms_shoes");
+  const res=await fetch(`https://api.cloudinary.com/v1_1/${CDN.cloudName}/image/upload`,{method:"POST",body:fd});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||"上传失败");}
+  const data=await res.json();
+  return data.secure_url.replace("/upload/","/upload/c_fill,w_400,h_400,q_auto,f_auto/");
+}
+function buildInv(shoes,logs){const inv={};shoes.forEach(s=>{inv[s.id]={};SIZES.forEach(sz=>{inv[s.id][sz]=0;});});logs.forEach(l=>{if(inv[l.shoeId]&&inv[l.shoeId][l.size]!==undefined)inv[l.shoeId][l.size]+=l.type==="in"?l.qty:-l.qty;});return inv;}
+const C={bg:"#f5f5f0",surface:"#ffffff",border:"#e8e8e2",border2:"#d8d8d0",text:"#1a1a1a",text2:"#666660",text3:"#999990",green:"#16a34a",greenBg:"#f0fdf4",greenBd:"#bbf7d0",red:"#dc2626",redBg:"#fef2f2",redBd:"#fecaca",yellow:"#d97706",yellowBg:"#fffbeb",yellowBd:"#fde68a",accent:"#2563eb",accentBg:"#eff6ff",accentBd:"#bfdbfe"};
+
+function App(){
+  const[shoes,setShoes]=useState(()=>loadLS(KEY_SHOES,DEFAULT_SHOES));
+  const[logs,setLogs]=useState(()=>loadLS(KEY_LOGS,[]));
+  const[page,setPage]=useState("home");
+  const[batchModal,setBatchModal]=useState(null);
+  const[batchForm,setBatchForm]=useState({});
+  const[shoeModal,setShoeModal]=useState(null);
+  const[shoeForm,setShoeForm]=useState({brand:"",name:"",color:""});
+  const[detailShoe,setDetailShoe]=useState(null);
+  const[syncStatus,setSyncStatus]=useState(CLOUD_ON?"idle":"offline");
+  const[lastSync,setLastSync]=useState(null);
+  const[isAdmin,setIsAdmin]=useState(()=>loadLS(KEY_AUTH,false));
+  const[pwModal,setPwModal]=useState(null);
+  const[pwInput,setPwInput]=useState("");
+  const[pwError,setPwError]=useState(false);
+  const[zoomPhoto,setZoomPhoto]=useState(null);
+  const[uploadState,setUploadState]=useState({});
+  const[toast,setToast]=useState(null);
+  const[isMobile,setIsMobile]=useState(window.innerWidth<=768);
+  const saveTimer=useRef(null);
+
+  useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<=768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  function showToast(msg,type="ok"){setToast({msg,type});setTimeout(()=>setToast(null),2500);}
+  function requireAdmin(action){if(isAdmin){action();return;}setPwInput("");setPwError(false);setPwModal({action});}
+  function submitPassword(){if(pwInput===ADMIN_PASSWORD){setIsAdmin(true);saveLS(KEY_AUTH,true);const act=pwModal?.action;setPwModal(null);setPwInput("");setPwError(false);if(act)act();}else{setPwError(true);setPwInput("");}}
+  function logout(){setIsAdmin(false);saveLS(KEY_AUTH,false);}
+  const persistLocal=useCallback((s,l)=>{saveLS(KEY_SHOES,s);saveLS(KEY_LOGS,l);},[]);
+  const scheduleCloud=useCallback((s,l)=>{if(!CLOUD_ON)return;clearTimeout(saveTimer.current);setSyncStatus("syncing");saveTimer.current=setTimeout(async()=>{try{await cloudSave({shoes:s,logs:l});setSyncStatus("ok");setLastSync(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));}catch{setSyncStatus("error");}},1200);},[]);
+  const pullCloud=useCallback(async(quiet=false)=>{if(!CLOUD_ON)return;if(!quiet)setSyncStatus("syncing");try{const rec=await cloudFetch();if(rec&&rec.shoes&&rec.shoes.length>0){const ms=rec.shoes.map(s=>({photoUrl:"",...s}));setShoes(ms);saveLS(KEY_SHOES,ms);setLogs(rec.logs||[]);saveLS(KEY_LOGS,rec.logs||[]);}else{const ls=loadLS(KEY_SHOES,DEFAULT_SHOES),ll=loadLS(KEY_LOGS,[]);await cloudSave({shoes:ls,logs:ll});setShoes(ls);setLogs(ll);}setSyncStatus("ok");setLastSync(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));}catch{setSyncStatus("error");}},[]);
+  useEffect(()=>{if(!CLOUD_ON)return;pullCloud();const id=setInterval(()=>pullCloud(true),60000);const onFocus=()=>pullCloud(true);window.addEventListener("focus",onFocus);return()=>{clearInterval(id);window.removeEventListener("focus",onFocus);};},[pullCloud]);
+  useEffect(()=>{const h=e=>{if(e.key==="Escape"){setZoomPhoto(null);setDetailShoe(null);}};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[]);
+  function updateShoes(d){setShoes(d);persistLocal(d,logs);scheduleCloud(d,logs);}
+  function updateLogs(d){setLogs(d);persistLocal(shoes,d);scheduleCloud(shoes,d);}
+
+  const inv=buildInv(shoes,logs);
+  const today=todayStr();
+  const todayLogs=logs.filter(l=>l.date===today);
+  const todayIn=todayLogs.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0);
+  const todayOut=todayLogs.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0);
+  const totalStock=shoes.reduce((s,sh)=>s+SIZES.reduce((a,sz)=>a+(inv[sh.id]?.[sz]||0),0),0);
+  const shoeById={};shoes.forEach(s=>{shoeById[s.id]=s;});
+  function shoeTotal(id){return SIZES.reduce((a,sz)=>a+(inv[id]?.[sz]||0),0);}
+  const soldOutStyles=shoes.filter(sh=>SIZES.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length;
+  const lowStockStyles=shoes.filter(sh=>SIZES.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=3;})).length;
+  const brandStock={};shoes.forEach(sh=>{brandStock[sh.brand]=(brandStock[sh.brand]||0)+shoeTotal(sh.id);});
+  const sizeTotal={};SIZES.forEach(sz=>{sizeTotal[sz]=shoes.reduce((a,sh)=>a+(inv[sh.id]?.[sz]||0),0);});
+  const logsByDate={};logs.forEach(l=>{if(!logsByDate[l.date])logsByDate[l.date]=[];logsByDate[l.date].push(l);});
+  const sortedDates=Object.keys(logsByDate).sort((a,b)=>b.localeCompare(a));
+
+  async function handlePhotoUpload(shoeId,file){
+    if(!file)return;
+    setUploadState(s=>({...s,[shoeId]:"uploading"}));
+    try{
+      const url=await uploadToCloudinary(file);
+      setShoes(prev=>{const updated=prev.map(s=>s.id===shoeId?{...s,photoUrl:url}:s);persistLocal(updated,logs);scheduleCloud(updated,logs);return updated;});
+      setUploadState(s=>({...s,[shoeId]:"done"}));
+      showToast("✓ 图片上传成功，所有人可见");
+      setTimeout(()=>setUploadState(s=>{const n={...s};delete n[shoeId];return n;}),2000);
+    }catch(err){
+      setUploadState(s=>({...s,[shoeId]:"error"}));
+      showToast("❌ 上传失败："+err.message,"err");
+      setTimeout(()=>setUploadState(s=>{const n={...s};delete n[shoeId];return n;}),3000);
+    }
+  }
+  function removePhoto(shoeId){updateShoes(shoes.map(s=>s.id===shoeId?{...s,photoUrl:""}:s));}
+  function openBatch(type,shoeId){const f={note:""};SIZES.forEach(sz=>{f[sz]="";});setBatchForm(f);setBatchModal({type,shoeId:shoeId||shoes[0]?.id});}
+  function submitBatch(){
+    const entries=Object.entries(batchForm).filter(([k,v])=>!isNaN(parseInt(k))&&parseInt(v)>0);
+    if(!entries.length)return;
+    if(batchModal.type==="out"){for(const[sz,v]of entries){const cur=inv[batchModal.shoeId]?.[parseInt(sz)]||0;if(parseInt(v)>cur){alert(`${shoeById[batchModal.shoeId]?.brand} ${shoeById[batchModal.shoeId]?.name} ${sz}码库存不足！当前仅剩 ${cur} 双`);return;}}}
+    updateLogs([...entries.map(([sz,v])=>({id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:parseInt(sz),qty:parseInt(v),note:batchForm.note||"",date:today,time:new Date().toISOString()})),...logs]);
+    setBatchModal(null);setBatchForm({});
+  }
+  function submitShoe(){if(!shoeForm.brand||!shoeForm.name)return;if(shoeModal==="add"){updateShoes([...shoes,{...shoeForm,id:genId(),photoUrl:""}]);}else{updateShoes(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm}:s));}setShoeModal(null);setShoeForm({brand:"",name:"",color:""});}
+  function deleteShoe(id){if(!confirm("确认删除该款鞋子？"))return;updateShoes(shoes.filter(s=>s.id!==id));}
+
+  const inp={width:"100%",background:"#fff",border:`1px solid ${C.border2}`,borderRadius:10,padding:"11px 14px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"};
+
+  function SzCell({qty,sz,compact}){
+    const col=qty===0?C.red:qty<=3?C.yellow:C.green;
+    const bg=qty===0?C.redBg:qty<=3?C.yellowBg:C.greenBg;
+    const bd=qty===0?C.redBd:qty<=3?C.yellowBd:C.greenBd;
+    return(<div style={{background:bg,border:`1px solid ${bd}`,borderRadius:compact?6:8,padding:compact?"4px 2px":"7px 2px",textAlign:"center"}}><div style={{fontSize:compact?7:8,color:C.text3,marginBottom:compact?1:3}}>{sz}</div><div style={{fontSize:compact?11:14,fontWeight:800,color:col,lineHeight:1}}>{qty}</div></div>);
+  }
+
+  function PhotoBox({shoe,size=110,rounded=false}){
+    const ref=useRef();const url=shoe?.photoUrl||"";const sid=shoe?.id;const st=uploadState[sid];const r=rounded?12:0;
+    return(
+      <div style={{width:size,height:size,flexShrink:0,position:"relative",background:"#f8f8f5",borderRadius:r,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+        {url?(
+          <>
+            <img src={url} alt="" style={{width:size,height:size,objectFit:"cover",display:"block",borderRadius:r}} onError={e=>{e.target.style.display="none";}}/>
+            <button onClick={e=>{e.stopPropagation();setZoomPhoto(url);}} style={{position:"absolute",bottom:6,right:6,width:24,height:24,borderRadius:7,background:"rgba(0,0,0,0.55)",border:"1.5px solid rgba(255,255,255,0.7)",color:"#fff",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>⤢</button>
+            {isAdmin&&<button onClick={e=>{e.stopPropagation();removePhoto(sid);}} style={{position:"absolute",top:6,right:6,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,0.9)",border:"2px solid #fff",color:"#fff",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,lineHeight:1}}>×</button>}
+          </>
+        ):st==="uploading"?(
+          <div style={{width:size,height:size,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,background:"#f0f4ff"}}><span className="spin" style={{fontSize:22,color:C.accent}}>↻</span><span style={{fontSize:10,color:C.accent}}>上传中…</span></div>
+        ):isAdmin?(
+          <div className="photo-upload" onClick={e=>{e.stopPropagation();ref.current?.click();}} style={{width:size,height:size,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:5,border:`1.5px dashed ${st==="error"?C.red:C.border2}`,background:st==="error"?"#fff5f5":"#fafaf8"}}>
+            <span style={{fontSize:Math.round(size*0.27),color:st==="error"?C.red:C.text3}}>{st==="error"?"⚠":"📷"}</span>
+            <span style={{fontSize:10,color:st==="error"?C.red:C.text3,textAlign:"center",padding:"0 4px"}}>{st==="error"?"上传失败":"点击上传"}</span>
+          </div>
+        ):(
+          <div style={{width:size,height:size,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5}}><span style={{fontSize:Math.round(size*0.32),color:C.text3}}>👟</span></div>
+        )}
+        {isAdmin&&<input ref={ref} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handlePhotoUpload(sid,e.target.files[0]);e.target.value="";}}/>}
+      </div>
+    );
+  }
+
+  function SyncBadge(){
+    const base={fontSize:10,display:"flex",alignItems:"center",gap:4};
+    if(syncStatus==="offline")return<div style={{...base,color:C.text3}}><span>💾</span><span>本地模式</span></div>;
+    if(syncStatus==="syncing")return<div style={{...base,color:C.accent}}><span className="spin">↻</span><span>同步中</span></div>;
+    if(syncStatus==="ok")return<div style={{...base,color:C.green,cursor:"pointer"}} onClick={()=>pullCloud()}><span>✓</span><span>已同步 {lastSync}</span></div>;
+    if(syncStatus==="error")return<div style={{...base,color:C.red,cursor:"pointer"}} onClick={()=>pullCloud()}><span>⚠</span><span>同步失败 点击重试</span></div>;
+    return null;
+  }
+
+  const nav=[{key:"home",icon:"▦",label:"总览"},{key:"ops",icon:"⇅",label:"进出仓"},{key:"logs",icon:"≡",label:"流水"},{key:"shoes",icon:"◈",label:"款式管理"}];
+
+  function PageHome(){
+    return(
+      <div>
+        <div className="page-header">
+          <div><div className="page-title">库存总览</div><div className="page-subtitle">{new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div></div>
+          {isAdmin&&<button className="btn-hover" onClick={()=>requireAdmin(()=>openBatch("in",null))} style={{background:C.green,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 快速入仓</button>}
+        </div>
+        <div className="stat-grid">
+          {[{label:"总库存",value:totalStock,color:C.text,bg:"#fff",bd:C.border,unit:"双",cls:"stat-span2"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
+            <div key={s.label} className={`stat-card ${s.cls||""}`} style={{background:s.bg,border:`1px solid ${s.bd}`}}>
+              <div className="stat-label">{s.label}</div><div className="stat-value" style={{color:s.color}}>{s.value}</div><div className="stat-unit">{s.unit}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:24}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>品牌库存</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(80px,1fr))",gap:8}}>
+              {Object.entries(brandStock).map(([brand,stock])=>(
+                <div key={brand} style={{background:C.bg,borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:11,color:C.text2,fontWeight:600,marginBottom:4}}>{brand}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:C.text,lineHeight:1}}>{stock}</div>
+                  <div style={{fontSize:9,color:C.text3,marginTop:3}}>双</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>全款尺码汇总</div>
+            <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4,marginBottom:10}}>
+              {SIZES.map(sz=><SzCell key={sz} qty={sizeTotal[sz]} sz={sz}/>)}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4}}>
+              {SIZES.map(sz=>{const max=Math.max(...Object.values(sizeTotal),1);const pct=Math.round((sizeTotal[sz]/max)*100);const col=sizeTotal[sz]===0?C.red:sizeTotal[sz]<=5?C.yellow:C.green;return(<div key={sz} style={{height:32,background:"#f0f0ec",borderRadius:4,overflow:"hidden",display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:`${pct}%`,background:col,borderRadius:4,minHeight:sizeTotal[sz]>0?3:0}}/></div>);})}
+            </div>
+          </div>
+        </div>
+        <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>款式库存 · 码数明细</div>
+        <div className="shoe-grid">
+          {shoes.map(shoe=>{
+            const total=shoeTotal(shoe.id);
+            const soldOut=SIZES.filter(sz=>(inv[shoe.id]?.[sz]||0)===0);
+            const low=SIZES.filter(sz=>{const q=inv[shoe.id]?.[sz]||0;return q>0&&q<=3;});
+            return(
+              <div key={shoe.id} className="card-hover" onClick={()=>setDetailShoe(shoe)} style={{background:C.surface,border:`1px solid ${soldOut.length?"#fca5a5":C.border}`,borderRadius:16,overflow:"hidden",cursor:"pointer"}}>
+                <div style={{display:"flex"}}><PhotoBox shoe={shoe} size={isMobile?100:120}/>
+                  <div style={{flex:1,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"center",minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:800,lineHeight:1.2}}>{shoe.brand}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.text2}}>{shoe.name}</div>
+                    <div style={{fontSize:11,color:C.text3,marginTop:2}}>{shoe.color}</div>
+                    <div style={{marginTop:10,display:"flex",alignItems:"baseline",gap:3}}><span style={{fontSize:30,fontWeight:800,lineHeight:1}}>{total}</span><span style={{fontSize:11,color:C.text3}}>双</span></div>
+                  </div>
+                </div>
+                <div style={{padding:"10px 12px 12px",borderTop:`1px solid ${C.border}`}}>
+                  <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:3}}>{SIZES.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz} compact/>)}</div>
+                  {soldOut.length>0&&<div style={{fontSize:10,color:C.red,marginTop:8,fontWeight:500}}>⚠ 断码：{soldOut.join(" / ")} 码</div>}
+                  {low.length>0&&!soldOut.length&&<div style={{fontSize:10,color:C.yellow,marginTop:8}}>▲ 低库存：{low.join(" / ")} 码</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  function PageOps(){
+    return(
+      <div>
+        <div className="page-header"><div><div className="page-title">进出仓</div><div className="page-subtitle">今日 {todayLogs.length} 笔记录</div></div></div>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"200px 200px",gap:12,marginBottom:28}}>
+          {[{type:"in",icon:"↑",label:"入仓",bg:C.greenBg,border:C.greenBd,color:C.green},{type:"out",icon:"↓",label:"出仓",bg:C.redBg,border:C.redBd,color:C.red}].map(b=>(
+            <button key={b.type} className="btn-hover" onClick={()=>requireAdmin(()=>openBatch(b.type,null))} style={{background:b.bg,border:`1.5px solid ${b.border}`,borderRadius:16,padding:"24px 12px",cursor:"pointer",color:b.color,textAlign:"center"}}>
+              <div style={{fontSize:28,marginBottom:6}}>{b.icon}</div><div style={{fontSize:16,fontWeight:700}}>{b.label}</div><div style={{fontSize:10,color:C.text3,marginTop:4}}>多码批量录入</div>{!isAdmin&&<div style={{fontSize:9,color:C.text3,marginTop:2}}>🔒 需要权限</div>}
+            </button>
+          ))}
+        </div>
+        <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>今日记录</div>
+        {todayLogs.length===0
+          ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>今日暂无记录</div>
+          :<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+            {todayLogs.map((l,i)=>{const sh=shoeById[l.shoeId];const isIn=l.type==="in";return(
+              <div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:i<todayLogs.length-1?`1px solid ${C.border}`:"none"}}>
+                <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                  {sh?.photoUrl?<img src={sh.photoUrl} alt="" style={{width:40,height:40,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`,flexShrink:0}}/>:<div style={{width:40,height:40,borderRadius:9,background:isIn?C.greenBg:C.redBg,border:`1px solid ${isIn?C.greenBd:C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:isIn?C.green:C.red,flexShrink:0}}>{isIn?"↑":"↓"}</div>}
+                  <div><div style={{fontSize:13,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"} <span style={{color:C.text3,fontSize:12}}>{l.size}码</span></div>{l.note&&<div style={{fontSize:10,color:C.text3,marginTop:1}}>{l.note}</div>}<div style={{fontSize:10,color:C.text3,marginTop:1}}>{fmtTime(l.time)}</div></div>
+                </div>
+                <div style={{fontSize:20,fontWeight:800,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div>
+              </div>
+            );})}
+          </div>
+        }
+      </div>
+    );
+  }
+
+  function PageLogs(){
+    return(
+      <div>
+        <div className="page-header"><div><div className="page-title">流水记录</div><div className="page-subtitle">共 {logs.length} 条记录</div></div></div>
+        {sortedDates.length===0
+          ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>暂无记录</div>
+          :sortedDates.map(date=>{
+            const dl=logsByDate[date];const din=dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0);const dout=dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0);
+            return(
+              <div key={date} style={{marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text2}}>{new Date(date+"T12:00:00").toLocaleDateString("zh-CN",{month:"2-digit",day:"2-digit",weekday:"short"})}</div>
+                  <div style={{fontSize:12}}><span style={{color:C.green,fontWeight:600}}>↑{din}</span><span style={{color:C.border2,margin:"0 8px"}}>·</span><span style={{color:C.red,fontWeight:600}}>↓{dout}</span></div>
+                </div>
+                {isMobile?(
+                  <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                    {dl.map(l=>{const sh=shoeById[l.shoeId];const isIn=l.type==="in";return(
+                      <div key={l.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"9px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:isIn?C.green:C.red,fontSize:13}}>{isIn?"↑":"↓"}</span><div><span style={{fontSize:12,fontWeight:500}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</span><span style={{fontSize:11,color:C.text3,marginLeft:6}}>{l.size}码</span>{l.note&&<span style={{fontSize:10,color:C.text3,marginLeft:6}}>{l.note}</span>}</div></div>
+                        <div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div><div style={{fontSize:9,color:C.text3}}>{fmtTime(l.time)}</div></div>
+                      </div>
+                    );})}
+                  </div>
+                ):(
+                  <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
+                    <table className="log-table"><thead><tr><th>款式</th><th>类型</th><th>尺码</th><th>数量</th><th>备注</th><th>时间</th></tr></thead>
+                      <tbody>{dl.map(l=>{const sh=shoeById[l.shoeId];const isIn=l.type==="in";return(
+                        <tr key={l.id}>
+                          <td><div style={{display:"flex",alignItems:"center",gap:10}}>{sh?.photoUrl&&<img src={sh.photoUrl} alt="" style={{width:32,height:32,objectFit:"cover",borderRadius:6,border:`1px solid ${C.border}`}}/>}<span style={{fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</span></div></td>
+                          <td><span style={{color:isIn?C.green:C.red,fontWeight:700,fontSize:12}}>{isIn?"↑ 入仓":"↓ 出仓"}</span></td>
+                          <td><span style={{fontWeight:600}}>{l.size}码</span></td>
+                          <td><span style={{fontWeight:800,color:isIn?C.green:C.red,fontSize:15}}>{isIn?"+":"-"}{l.qty}</span></td>
+                          <td style={{color:C.text3}}>{l.note||"—"}</td>
+                          <td style={{color:C.text3,fontSize:11}}>{fmtTime(l.time)}</td>
+                        </tr>
+                      );})}</tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        }
+      </div>
+    );
+  }
+
+  function PageShoes(){
+    return(
+      <div>
+        <div className="page-header">
+          <div><div className="page-title">款式管理</div><div className="page-subtitle">共 {shoes.length} 款</div></div>
+          {isAdmin&&<button className="btn-hover" onClick={()=>{setShoeForm({brand:"",name:"",color:""});setShoeModal("add");}} style={{background:C.accent,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>+ 新增款式</button>}
+        </div>
+        <div className="shoe-grid">
+          {shoes.map(shoe=>{const total=shoeTotal(shoe.id);return(
+            <div key={shoe.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,overflow:"hidden"}}>
+              <div style={{display:"flex"}}><PhotoBox shoe={shoe} size={isMobile?90:110}/>
+                <div style={{flex:1,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+                  <div><div style={{fontSize:14,fontWeight:700}}>{shoe.brand} {shoe.name}</div><div style={{fontSize:11,color:C.text3,marginTop:3}}>{shoe.color} · {total} 双</div></div>
+                  {isAdmin&&<div style={{display:"flex",gap:6,marginTop:8}}>
+                    <button onClick={()=>{setShoeForm({brand:shoe.brand,name:shoe.name,color:shoe.color});setShoeModal(shoe);}} style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:6,padding:"5px 14px",color:C.text2,fontSize:11,cursor:"pointer"}}>编辑</button>
+                    <button onClick={()=>deleteShoe(shoe.id)} style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:6,padding:"5px 14px",color:C.red,fontSize:11,cursor:"pointer"}}>删除</button>
+                  </div>}
+                </div>
+              </div>
+              <div style={{padding:"10px 12px 12px",borderTop:`1px solid ${C.border}`}}><div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:3}}>{SIZES.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz} compact/>)}</div></div>
+            </div>
+          );})}
+        </div>
+      </div>
+    );
+  }
+
+  const pageMap={home:<PageHome/>,ops:<PageOps/>,logs:<PageLogs/>,shoes:<PageShoes/>};
+
+  // 弹窗公共样式
+  const modalWrap=(mobile)=>({position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:mobile?"flex-end":"center",justifyContent:"center",zIndex:100});
+  const modalBox=(mobile)=>({background:C.surface,borderRadius:mobile?"20px 20px 0 0":20,width:"100%",maxWidth:520,margin:mobile?"0":"auto",padding:22,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.12)"});
+
+  return(
+    <div className="app-shell">
+      {/* 左侧导航（桌面） */}
+      <aside className="sidebar">
+        <div className="sidebar-logo"><div className="en">Shoe Warehouse</div><div className="zh">仓库管理</div><div style={{marginTop:8}}><SyncBadge/></div></div>
+        <nav className="sidebar-nav">
+          {nav.map(n=>(<button key={n.key} className={`sidebar-nav-item${page===n.key?" active":""}`} onClick={()=>setPage(n.key)}><span className="nav-icon">{n.icon}</span><span>{n.label}</span></button>))}
+        </nav>
+        <div className="sidebar-bottom">
+          {isAdmin?(<button onClick={logout} style={{width:"100%",background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"8px 0",color:C.yellow,fontSize:11,cursor:"pointer",fontWeight:600}}>👤 管理员 · 退出</button>):(<button onClick={()=>requireAdmin(()=>{})} style={{width:"100%",background:C.bg,border:`1px solid ${C.border2}`,borderRadius:8,padding:"8px 0",color:C.text3,fontSize:11,cursor:"pointer"}}>🔒 登录管理</button>)}
+        </div>
+      </aside>
+
+      {/* 主内容 */}
+      <main className="main-content">
+        {isMobile&&(
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,paddingBottom:12,borderBottom:`1px solid ${C.border}`}}>
+            <div><div style={{fontSize:9,letterSpacing:3,color:C.text3,textTransform:"uppercase"}}>Shoe Warehouse</div><div style={{fontSize:19,fontWeight:800}}>仓库管理</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <SyncBadge/>
+              {isAdmin?(<button onClick={logout} style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"4px 10px",color:C.yellow,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>管理员 · 退出</button>):(<button onClick={()=>requireAdmin(()=>{})} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:8,padding:"4px 10px",color:C.text3,fontSize:10,cursor:"pointer",whiteSpace:"nowrap"}}>🔒 登录</button>)}
+            </div>
+          </div>
+        )}
+        {pageMap[page]}
+      </main>
+
+      {/* 底部导航（手机） */}
+      <nav className="mobile-nav"><div className="mobile-nav-inner">{nav.map(n=>(<button key={n.key} className="mobile-nav-btn" onClick={()=>setPage(n.key)}><span style={{fontSize:15,color:page===n.key?C.accent:C.border2}}>{n.icon}</span><span style={{fontSize:10,color:page===n.key?C.accent:C.text3,letterSpacing:1,fontWeight:page===n.key?600:400}}>{n.label}</span></button>))}</div></nav>
+
+      {/* Toast */}
+      {toast&&<div style={{position:"fixed",bottom:isMobile?100:30,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"rgba(220,38,38,0.95)":"rgba(22,163,74,0.95)",color:"#fff",borderRadius:12,padding:"10px 20px",fontSize:13,fontWeight:600,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
+
+      {/* 密码弹窗 */}
+      {pwModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:20}}>
+          <div className="zoom-in" style={{background:C.surface,borderRadius:20,padding:28,width:"100%",maxWidth:340,boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
+            <div style={{textAlign:"center",marginBottom:20}}><div style={{fontSize:36,marginBottom:8}}>🔒</div><div style={{fontSize:17,fontWeight:800}}>管理员验证</div><div style={{fontSize:12,color:C.text3,marginTop:4}}>请输入管理密码以继续操作</div></div>
+            <input type="password" value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}} onKeyDown={e=>{if(e.key==="Enter")submitPassword();}} placeholder="输入密码" autoFocus style={{...inp,textAlign:"center",fontSize:18,letterSpacing:4,border:`1.5px solid ${pwError?C.red:C.border2}`,background:pwError?C.redBg:"#fff",marginBottom:8}}/>
+            {pwError&&<div style={{textAlign:"center",color:C.red,fontSize:12,marginBottom:8,fontWeight:500}}>密码错误，请重试</div>}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:8}}>
+              <button onClick={()=>{setPwModal(null);setPwInput("");setPwError(false);}} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
+              <button onClick={submitPassword} style={{background:C.accent,border:"none",borderRadius:12,padding:13,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>确认</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 图片放大 */}
+      {zoomPhoto&&(
+        <div onClick={()=>setZoomPhoto(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20}}>
+          <div className="zoom-in" style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
+            <img src={zoomPhoto} alt="" style={{maxWidth:"min(600px,90vw)",maxHeight:"85vh",objectFit:"contain",borderRadius:16,boxShadow:"0 8px 48px rgba(0,0,0,0.6)",display:"block"}}/>
+            <button onClick={()=>setZoomPhoto(null)} style={{position:"absolute",top:-14,right:-14,width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.15)",border:"2px solid rgba(255,255,255,0.5)",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,lineHeight:1}}>×</button>
+          </div>
+          <div style={{position:"absolute",bottom:20,color:"rgba(255,255,255,0.4)",fontSize:11}}>点击任意处关闭</div>
+        </div>
+      )}
+
+      {/* 进出仓弹窗 */}
+      {batchModal&&(()=>{
+        const isIn=batchModal.type==="in";const totalFill=SIZES.reduce((a,sz)=>a+(parseInt(batchForm[sz])||0),0);const shoe=shoeById[batchModal.shoeId];
+        return(
+          <div style={modalWrap(isMobile)}>
+            <div className={isMobile?"slide-up":"zoom-in"} style={modalBox(isMobile)}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:isIn?C.green:C.red}}>{isIn?"↑ 入仓登记":"↓ 出仓登记"}</div><button onClick={()=>setBatchModal(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
+              <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>选择款式</div><select value={batchModal.shoeId} onChange={e=>setBatchModal({...batchModal,shoeId:e.target.value})} style={{...inp}}>{shoes.map(s=><option key={s.id} value={s.id}>{s.brand} {s.name} {s.color}</option>)}</select></div>
+              {shoe?.photoUrl&&<div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:C.bg,borderRadius:10}}><img src={shoe.photoUrl} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:10,border:`1px solid ${C.border}`,cursor:"pointer"}} onClick={()=>setZoomPhoto(shoe.photoUrl)}/><div><div style={{fontSize:14,fontWeight:700}}>{shoe?.brand} {shoe?.name}</div><div style={{fontSize:11,color:C.text3}}>{shoe?.color}</div></div></div>}
+              <div style={{fontSize:10,color:C.text3,marginBottom:10,display:"flex",justifyContent:"space-between"}}><span>各码数量（双）</span>{totalFill>0&&<span style={{color:isIn?C.green:C.red,fontWeight:600}}>合计 {totalFill} 双</span>}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:14}}>
+                {SIZES.map(sz=>{const cur=inv[batchModal.shoeId]?.[sz]||0;const curCol=cur===0?C.red:cur<=3?C.yellow:C.green;return(
+                  <div key={sz} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div><div style={{fontSize:16,fontWeight:800,lineHeight:1}}>{sz}<span style={{fontSize:9,color:C.text3,marginLeft:2}}>码</span></div><div style={{fontSize:9,color:C.text3,marginTop:3}}>现有 <span style={{color:curCol,fontWeight:600}}>{cur}</span> 双</div></div>
+                    <input type="number" min="0" value={batchForm[sz]||""} onChange={e=>setBatchForm({...batchForm,[sz]:e.target.value})} placeholder="0" style={{width:50,background:"#fff",border:`1px solid ${C.border2}`,borderRadius:8,padding:"8px 6px",color:C.text,fontSize:17,fontWeight:800,outline:"none",textAlign:"center"}}/>
+                  </div>
+                );})}
+              </div>
+              <div style={{marginBottom:18}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>备注（可选）</div><input type="text" value={batchForm.note||""} onChange={e=>setBatchForm({...batchForm,note:e.target.value})} placeholder="如：供应商补货 / 门店出货..." style={{...inp}}/></div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <button onClick={()=>{setBatchModal(null);setBatchForm({});}} style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
+                <button onClick={submitBatch} style={{background:isIn?C.green:C.red,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>确认{isIn?"入仓":"出仓"}{totalFill>0?` (${totalFill}双)`:""}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 款式详情弹窗 */}
+      {detailShoe&&(()=>{
+        const shoe=shoes.find(s=>s.id===detailShoe.id)||detailShoe;const shoeLogs=logs.filter(l=>l.shoeId===shoe.id);const total=shoeTotal(shoe.id);const soldOut=SIZES.filter(sz=>(inv[shoe.id]?.[sz]||0)===0);const low=SIZES.filter(sz=>{const q=inv[shoe.id]?.[sz]||0;return q>0&&q<=3;});
+        return(
+          <div style={modalWrap(isMobile)} onClick={()=>setDetailShoe(null)}>
+            <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:540}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:17,fontWeight:800}}>{shoe.brand} {shoe.name}</div><button onClick={()=>setDetailShoe(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
+              <div style={{display:"flex",gap:16,alignItems:"flex-start",marginBottom:18}}>
+                <PhotoBox shoe={shoe} size={100} rounded/>
+                <div style={{flex:1}}><div style={{fontSize:12,color:C.text3}}>{shoe.color}</div><div style={{fontSize:28,fontWeight:800,marginTop:6}}>{total}<span style={{fontSize:12,color:C.text3,marginLeft:4}}>双</span></div>{soldOut.length>0&&<div style={{fontSize:11,color:C.red,marginTop:6,fontWeight:500}}>⚠ 断码：{soldOut.join(" / ")} 码</div>}{low.length>0&&!soldOut.length&&<div style={{fontSize:11,color:C.yellow,marginTop:6}}>▲ 低库存：{low.join(" / ")} 码</div>}</div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:`repeat(${SIZES.length},1fr)`,gap:4,marginBottom:16}}>{SIZES.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz}/>)}</div>
+              {isAdmin&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+                <button onClick={()=>{setDetailShoe(null);openBatch("in",shoe.id);}} style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:12,color:C.green,fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 入仓</button>
+                <button onClick={()=>{setDetailShoe(null);openBatch("out",shoe.id);}} style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:10,padding:12,color:C.red,fontSize:13,fontWeight:700,cursor:"pointer"}}>↓ 出仓</button>
+              </div>}
+              <div style={{fontSize:9,color:C.text3,letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>进出流水 · {shoeLogs.length} 条</div>
+              {shoeLogs.length===0?<div style={{color:C.text3,fontSize:13,padding:"16px 0",textAlign:"center"}}>暂无流水记录</div>:shoeLogs.map(l=>{const isIn=l.type==="in";return(<div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:isIn?C.green:C.red,fontSize:13}}>{isIn?"↑":"↓"}</span><div><div style={{fontSize:12}}>{l.size}码 {l.note&&<span style={{color:C.text3}}>· {l.note}</span>}</div><div style={{fontSize:9,color:C.text3}}>{l.date} {fmtTime(l.time)}</div></div></div><div style={{fontSize:16,fontWeight:700,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div></div>);})}
+              <button onClick={()=>setDetailShoe(null)} style={{width:"100%",marginTop:16,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>关闭</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 款式编辑弹窗 */}
+      {shoeModal&&(
+        <div style={modalWrap(isMobile)}>
+          <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:440}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}><div style={{fontSize:15,fontWeight:700}}>{shoeModal==="add"?"+ 新增款式":"编辑款式"}</div><button onClick={()=>setShoeModal(null)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
+            {[{key:"brand",label:"品牌",ph:"Nike / Adidas / New Balance..."},{key:"name",label:"款式名称",ph:"Air Max / Stan Smith..."},{key:"color",label:"颜色",ph:"黑色 / 白色 / 灰色..."}].map(f=>(<div key={f.key} style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>{f.label}</div><input value={shoeForm[f.key]} onChange={e=>setShoeForm({...shoeForm,[f.key]:e.target.value})} placeholder={f.ph} style={{...inp}}/></div>))}
+            <div style={{fontSize:10,color:C.text3,marginBottom:16,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.border}`}}>📷 保存后在款式卡片上点击图片区域上传，图片同步给所有人</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <button onClick={()=>setShoeModal(null)} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
+              <button onClick={submitShoe} style={{background:C.accent,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
