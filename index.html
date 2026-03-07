@@ -198,7 +198,10 @@ function App(){
     setBatchModal(null);setBatchForm({});
   }
   function submitShoe(){if(!shoeForm.brand||!shoeForm.name)return;if(shoeModal==="add"){updateShoes([...shoes,{...shoeForm,id:genId(),photoUrl:""}]);}else{updateShoes(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm}:s));}setShoeModal(null);setShoeForm({brand:"",name:"",color:""});}
-  function deleteShoe(id){if(!confirm("确认删除该款鞋子？"))return;updateShoes(shoes.filter(s=>s.id!==id));}
+  function deleteShoe(id){if(!confirm("确认删除该款鞋子？"))return;updateShoes(shoes.filter(s=>s.id!==id));}function deleteLog(id){if(!confirm("确认删除该条记录？删除后库存会同步更新。"))return;updateLogs(logs.filter(l=>l.id!==id));}
+```
+
+---
 
   const inp={width:"100%",background:"#fff",border:`1px solid ${C.border2}`,borderRadius:10,padding:"11px 14px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"};
 
@@ -355,7 +358,11 @@ function App(){
                   {sh?.photoUrl?<img src={sh.photoUrl} alt="" style={{width:40,height:40,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`,flexShrink:0}}/>:<div style={{width:40,height:40,borderRadius:9,background:isIn?C.greenBg:C.redBg,border:`1px solid ${isIn?C.greenBd:C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:isIn?C.green:C.red,flexShrink:0}}>{isIn?"↑":"↓"}</div>}
                   <div><div style={{fontSize:13,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"} <span style={{color:C.text3,fontSize:12}}>{l.size}码</span></div>{l.note&&<div style={{fontSize:10,color:C.text3,marginTop:1}}>{l.note}</div>}<div style={{fontSize:10,color:C.text3,marginTop:1}}>{fmtTime(l.time)}</div></div>
                 </div>
-                <div style={{fontSize:20,fontWeight:800,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div>
+               ```
+<div style={{display:"flex",alignItems:"center",gap:10}}>
+  <div style={{fontSize:20,fontWeight:800,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div>
+  {isAdmin&&<button onClick={()=>deleteLog(l.id)} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,padding:"4px 8px",color:"#dc2626",fontSize:11,cursor:"pointer",fontWeight:600}}>删除</button>}
+</div>
               </div>
             );})}
           </div>
