@@ -357,9 +357,10 @@ function App(){
                 <div style={{display:"flex",gap:12,alignItems:"center"}}>
                   {sh?.photoUrl?<img src={sh.photoUrl} alt="" style={{width:40,height:40,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`,flexShrink:0}}/>:<div style={{width:40,height:40,borderRadius:9,background:isIn?C.greenBg:C.redBg,border:`1px solid ${isIn?C.greenBd:C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:isIn?C.green:C.red,flexShrink:0}}>{isIn?"↑":"↓"}</div>}
                   <div><div style={{fontSize:13,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"} <span style={{color:C.text3,fontSize:12}}>{l.size}码</span></div>{l.note&&<div style={{fontSize:10,color:C.text3,marginTop:1}}>{l.note}</div>}<div style={{fontSize:10,color:C.text3,marginTop:1}}>{fmtTime(l.time)}</div></div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{fontSize:20,fontWeight:800,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div>
+                  {isAdmin&&<button onClick={()=>deleteLog(l.id)} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,padding:"4px 8px",color:"#dc2626",fontSize:11,cursor:"pointer",fontWeight:600}}>删除</button>}
                 </div>
-               ```
-<div style={{display:"flex",alignItems:"center",gap:10}}>
   <div style={{fontSize:20,fontWeight:800,color:isIn?C.green:C.red}}>{isIn?"+":"-"}{l.qty}</div>
   {isAdmin&&<button onClick={()=>deleteLog(l.id)} style={{background:"#fef2f2",border:"1px solid #fecaca",borderRadius:7,padding:"4px 8px",color:"#dc2626",fontSize:11,cursor:"pointer",fontWeight:600}}>删除</button>}
 </div>
