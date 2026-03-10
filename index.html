@@ -106,49 +106,50 @@ async function hashPassword(pw){
 }
 
 // ═══════════════════════════════════════════════
-// 配置 — 运行时注入，不再硬编码
+// 配置 — 运行时注入，支持设置页动态修改
 // ═══════════════════════════════════════════════
-const CLOUD_CONFIG=(()=>{
-  // 安全改进：从 URL hash 或 meta 标签读取配置
-  // 部署时在 URL 后加 #binId=xxx&masterKey=xxx
-  // 或者设置 <meta name="wms-bin-id" content="xxx">
+function getCloudConfig(){
+  const saved=loadLS("wms_cloud_v1",null);
   const params=new URLSearchParams(window.location.hash.slice(1));
   const metaBin=document.querySelector('meta[name="wms-bin-id"]')?.content;
   const metaKey=document.querySelector('meta[name="wms-master-key"]')?.content;
   return{
-    binId:params.get("binId")||metaBin||"",
-    masterKey:params.get("masterKey")||metaKey||""
+    binId:saved?.binId||params.get("binId")||metaBin||"",
+    masterKey:saved?.masterKey||params.get("masterKey")||metaKey||""
   };
-})();
-const CLOUD_ON=!!CLOUD_CONFIG.binId&&!!CLOUD_CONFIG.masterKey;
-
-const CDN_CONFIG=(()=>{
+}
+function getCdnConfig(){
+  const saved=loadLS("wms_cdn_v1",null);
   const params=new URLSearchParams(window.location.hash.slice(1));
   const metaName=document.querySelector('meta[name="wms-cdn-name"]')?.content;
   const metaPreset=document.querySelector('meta[name="wms-cdn-preset"]')?.content;
   return{
-    cloudName:params.get("cdnName")||metaName||"",
-    uploadPreset:params.get("cdnPreset")||metaPreset||""
+    cloudName:saved?.cloudName||params.get("cdnName")||metaName||"",
+    uploadPreset:saved?.uploadPreset||params.get("cdnPreset")||metaPreset||""
   };
-})();
-const CDN_ON=!!CDN_CONFIG.cloudName&&!!CDN_CONFIG.uploadPreset;
+}
+let CLOUD_CONFIG=getCloudConfig();
+let CLOUD_ON=!!CLOUD_CONFIG.binId&&!!CLOUD_CONFIG.masterKey;
+let CDN_CONFIG=getCdnConfig();
+let CDN_ON=!!CDN_CONFIG.cloudName&&!!CDN_CONFIG.uploadPreset;
 
 // ═══════════════════════════════════════════════
 // 常量与 localStorage Key
 // ═══════════════════════════════════════════════
 const DEFAULT_SIZES=[36,37,38,39,40,41,42,43,44];
-const KEY_SHOES="wms_shoes_v4",KEY_LOGS="wms_logs_v4",KEY_PW_HASH="wms_pwh_v2",KEY_THRESH="wms_thresh_v2",KEY_SIZES="wms_sizes_v1",KEY_CHECKS="wms_checks_v1";
+const KEY_SHOES="wms_shoes_v4",KEY_LOGS="wms_logs_v4",KEY_PW_HASH="wms_pwh_v2",KEY_THRESH="wms_thresh_v2",KEY_SIZES="wms_sizes_v1",KEY_CHECKS="wms_checks_v1",KEY_CLOUD="wms_cloud_v1",KEY_CDN="wms_cdn_v1",KEY_LAST_CHECK="wms_lastcheck_v1";
 // 旧版 key（用于自动迁移）
 const OLD_KEY_SHOES="wms_shoes_v3",OLD_KEY_LOGS="wms_logs_v3",OLD_KEY_THRESH="wms_thresh_v1";
-const DEFAULT_PW_HASH=null; // 首次使用时会提示设置密码
+const DEFAULT_PW_HASH=null;
+const IDLE_TIMEOUT=15*60*1000; // 15分钟无操作自动登出
 const DEFAULT_SHOES=[
-  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:""},
-  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:""},
-  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:""},
-  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:""},
-  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:""},
-  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:""},
-  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:""},
+  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:"",price:0},
+  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:"",price:0},
+  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:"",price:0},
+  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:"",price:0},
+  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:"",price:0},
+  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:"",price:0},
+  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:"",price:0},
 ];
 
 // ═══════════════════════════════════════════════
@@ -383,10 +384,11 @@ function App(){
   const[batchModal,setBatchModal]=useState(null);
   const[batchForm,setBatchForm]=useState({});
   const[shoeModal,setShoeModal]=useState(null);
-  const[shoeForm,setShoeForm]=useState({brand:"",name:"",color:""});
+  const[shoeForm,setShoeForm]=useState({brand:"",name:"",color:"",price:""});
   const[detailShoe,setDetailShoe]=useState(null);
   const[checkModal,setCheckModal]=useState(null);
   const[checkForm,setCheckForm]=useState({});
+  const[checkReason,setCheckReason]=useState("");
   const[syncStatus,setSyncStatus]=useState(CLOUD_ON?"idle":"offline");
   const[lastSync,setLastSync]=useState(null);
   const[zoomPhoto,setZoomPhoto]=useState(null);
@@ -396,11 +398,22 @@ function App(){
   const[sortBy,setSortBy]=useState("default");
   const[flashIds,setFlashIds]=useState({});
   const saveTimer=useRef(null);
+  const idleTimer=useRef(null);
 
   // ─── 模态框滚动锁定 ───
   useBodyScrollLock(!!batchModal||!!detailShoe||!!shoeModal||!!pwModal||!!zoomPhoto||!!checkModal);
 
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<=768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+
+  // ─── Idle 自动登出 ───
+  useEffect(()=>{
+    if(!isAdmin)return;
+    function resetIdle(){clearTimeout(idleTimer.current);idleTimer.current=setTimeout(()=>{setIsAdmin(false);showToast("已自动退出（长时间未操作）");},IDLE_TIMEOUT);}
+    const events=["mousedown","keydown","touchstart","scroll"];
+    events.forEach(e=>window.addEventListener(e,resetIdle,{passive:true}));
+    resetIdle();
+    return()=>{clearTimeout(idleTimer.current);events.forEach(e=>window.removeEventListener(e,resetIdle));};
+  },[isAdmin]);
 
   function showToast(msg,type="ok"){setToast({msg,type});setTimeout(()=>setToast(null),2600);}
 
@@ -503,6 +516,22 @@ function App(){
     return 0;
   }),[filteredShoes,sortBy,shoeTotal,inv,sizes]);
 
+  // ─── KPI 指标 ───
+  const stockoutRate=useMemo(()=>shoes.length>0?Math.round(soldOutStyles/shoes.length*100):0,[soldOutStyles,shoes]);
+  const totalInvValue=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id)*(sh.price||0),0),[shoes,shoeTotal]);
+  const turnoverRate=useMemo(()=>{
+    // 近30天出仓总量 / 平均库存
+    const d30=new Date();d30.setDate(d30.getDate()-30);const d30s=d30.toISOString().slice(0,10);
+    const outQty=logs.filter(l=>l.type==="out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0);
+    return totalStock>0?(outQty/totalStock).toFixed(1):"0.0";
+  },[logs,totalStock]);
+  const lastCheckDate=useMemo(()=>checks.length>0?checks[0].date:null,[checks]);
+  const daysSinceCheck=useMemo(()=>{
+    if(!lastCheckDate)return null;
+    const diff=Math.floor((new Date()-new Date(lastCheckDate+"T12:00:00"))/(1000*60*60*24));
+    return diff;
+  },[lastCheckDate]);
+
   // ─── 报表数据 ───
   const last7Days=useMemo(()=>{
     const result=[];
@@ -527,10 +556,10 @@ function App(){
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`仓库备份_${todayStr()}.json`;a.click();URL.revokeObjectURL(url);showToast("✓ 备份已下载");
   }
   function exportCSV(){
-    const rows=[["品牌","款式","颜色",...sizes.map(s=>s+"码"),"总计"]];
+    const rows=[["品牌","款式","颜色","采购价",...sizes.map(s=>s+"码"),"总计","库存价值"]];
     shoes.forEach(sh=>{
-      const row=[sh.brand,sh.name,sh.color,...sizes.map(sz=>inv[sh.id]?.[sz]||0)];
-      row.push(shoeTotal(sh.id));
+      const tot=shoeTotal(sh.id);
+      const row=[sh.brand,sh.name,sh.color,sh.price||0,...sizes.map(sz=>inv[sh.id]?.[sz]||0),tot,tot*(sh.price||0)];
       rows.push(row);
     });
     const csv="\uFEFF"+rows.map(r=>r.join(",")).join("\n");
@@ -570,7 +599,15 @@ function App(){
   function removePhoto(shoeId){updateData(shoes.map(s=>s.id===shoeId?{...s,photoUrl:""}:s),null);}
 
   // ─── 入仓/出仓 ───
-  function openBatch(type,shoeId){const f={note:""};sizes.forEach(sz=>{f[sz]="";});setBatchForm(f);setBatchModal({type,shoeId:shoeId||shoes[0]?.id});}
+  function openBatch(type,shoeId){const f={note:"",_smartTotal:""};sizes.forEach(sz=>{f[sz]="";});setBatchForm(f);setBatchModal({type,shoeId:shoeId||shoes[0]?.id});}
+  function smartFill(total){
+    if(!total||total<=0)return;
+    const perSize=Math.floor(total/sizes.length);
+    const remainder=total%sizes.length;
+    const f={...batchForm,_smartTotal:String(total)};
+    sizes.forEach((sz,i)=>{f[sz]=String(perSize+(i<remainder?1:0));});
+    setBatchForm(f);
+  }
   function submitBatch(){
     const entries=Object.entries(batchForm).filter(([k,v])=>!isNaN(parseInt(k))&&parseInt(v)>0);
     if(!entries.length)return;
@@ -598,33 +635,36 @@ function App(){
   // ─── 款式管理 ───
   function submitShoe(){
     if(!shoeForm.brand||!shoeForm.name)return;
-    if(shoeModal==="add"){updateData([...shoes,{...shoeForm,id:genId(),photoUrl:""}],null);}
-    else{updateData(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm}:s),null);}
-    setShoeModal(null);setShoeForm({brand:"",name:"",color:""});showToast("✓ 保存成功");
+    const priceVal=parseFloat(shoeForm.price)||0;
+    if(shoeModal==="add"){updateData([...shoes,{...shoeForm,price:priceVal,id:genId(),photoUrl:""}],null);}
+    else{updateData(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm,price:priceVal}:s),null);}
+    setShoeModal(null);setShoeForm({brand:"",name:"",color:"",price:""});showToast("✓ 保存成功");
   }
   function deleteShoe(id){if(!confirm("确认删除该款鞋子？相关流水记录将保留。"))return;updateData(shoes.filter(s=>s.id!==id),null);}
 
   // ─── 盘点 ───
   function openCheck(shoeId){
     const f={};sizes.forEach(sz=>{f[sz]=String(inv[shoeId]?.[sz]||0);});
-    setCheckForm(f);setCheckModal({shoeId});
+    setCheckForm(f);setCheckReason("");setCheckModal({shoeId});
   }
   function submitCheck(){
     if(!checkModal)return;
     const sid=checkModal.shoeId;
     const adjustLogs=[];const diffs=[];
+    const reasonText=checkReason||"未注明";
     sizes.forEach(sz=>{
       const actual=parseInt(checkForm[sz])||0;
       const system=inv[sid]?.[sz]||0;
       const diff=actual-system;
       if(diff!==0){
-        adjustLogs.push({id:genId(),type:"check-adjust",shoeId:sid,size:sz,qty:diff,note:`盘点调整(系统${system}→实际${actual})`,date:today,time:new Date().toISOString()});
+        adjustLogs.push({id:genId(),type:"check-adjust",shoeId:sid,size:sz,qty:diff,note:`盘点调整[${reasonText}](系统${system}→实际${actual})`,date:today,time:new Date().toISOString()});
         diffs.push(`${sz}码: ${system}→${actual} (${diff>0?"+":""}${diff})`);
       }
     });
     if(!adjustLogs.length){showToast("库存无差异");setCheckModal(null);return;}
-    const checkRecord={id:genId(),date:today,time:new Date().toISOString(),shoeId:sid,diffs};
+    const checkRecord={id:genId(),date:today,time:new Date().toISOString(),shoeId:sid,reason:reasonText,diffs};
     setChecks(prev=>{const nc=[checkRecord,...prev];saveLS(KEY_CHECKS,nc);return nc;});
+    saveLS(KEY_LAST_CHECK,today);
     updateData(null,[...adjustLogs,...logs],sid);
     setCheckModal(null);showToast(`✓ 盘点完成，${adjustLogs.length} 码有差异`);
   }
@@ -707,6 +747,13 @@ function App(){
           </div>
         ))}
       </div>
+      {/* 盘点提醒 */}
+      {(daysSinceCheck===null||daysSinceCheck>30)&&isAdmin&&(
+        <div style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+          <div style={{fontSize:12,color:C.yellow,fontWeight:600}}>{daysSinceCheck===null?"📋 尚未进行过盘点，建议尽快安排":"📋 距上次盘点已超过30天，建议重新盘点"}</div>
+          <button onClick={()=>setPage("report")} style={{background:C.yellow,border:"none",borderRadius:8,padding:"6px 14px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>查看报表</button>
+        </div>
+      )}
       <BrandSection/>
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
         <div style={{flex:1,minWidth:180,position:"relative"}}>
@@ -829,9 +876,33 @@ function App(){
   function PageReport(){
     return(<div>
       <div className="page-header">
-        <div><div className="page-title">数据报表</div><div className="page-subtitle">近7日出入仓趋势 / 库存分布</div></div>
+        <div><div className="page-title">数据报表</div><div className="page-subtitle">KPI · 趋势 · 库存分布</div></div>
         <div style={{display:"flex",gap:8}}>
           <button className="btn-hover focus-ring" onClick={()=>requireAdmin(exportCSV)} style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:"8px 16px",color:C.green,fontSize:12,fontWeight:700,cursor:"pointer"}}>⬇ 导出CSV</button>
+        </div>
+      </div>
+
+      {/* KPI 卡片 */}
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:12,marginBottom:24}}>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>缺货率</div>
+          <div style={{fontSize:28,fontWeight:800,color:stockoutRate>30?C.red:stockoutRate>15?C.yellow:C.green}}>{stockoutRate}%</div>
+          <div style={{fontSize:10,color:C.text3,marginTop:4}}>断码款式 / 总款式</div>
+        </div>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>月周转率</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.accent}}>{turnoverRate}</div>
+          <div style={{fontSize:10,color:C.text3,marginTop:4}}>30日出仓量 / 当前库存</div>
+        </div>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>库存总价值</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.text}}>{totalInvValue>0?`¥${totalInvValue.toLocaleString()}`:"—"}</div>
+          <div style={{fontSize:10,color:C.text3,marginTop:4}}>{totalInvValue>0?"按采购价计算":"请在款式中填写采购价"}</div>
+        </div>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>上次盘点</div>
+          <div style={{fontSize:28,fontWeight:800,color:daysSinceCheck===null?C.text3:daysSinceCheck>30?C.red:daysSinceCheck>14?C.yellow:C.green}}>{daysSinceCheck===null?"未盘":daysSinceCheck+"天"}</div>
+          <div style={{fontSize:10,color:C.text3,marginTop:4}}>{daysSinceCheck===null?"从未盘点":daysSinceCheck>30?"建议尽快盘点":"距上次盘点"}</div>
         </div>
       </div>
 
@@ -851,10 +922,11 @@ function App(){
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           {Object.entries(brandMap).map(([brand,info])=>{
             const pct=totalStock>0?Math.round(info.total/totalStock*100):0;
+            const brandValue=info.shoes.reduce((s,sh)=>s+shoeTotal(sh.id)*(sh.price||0),0);
             return(<div key={brand} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 16px",flex:"1 0 auto",minWidth:120,textAlign:"center"}}>
               <div style={{fontSize:24,fontWeight:800,color:C.text}}>{pct}%</div>
               <div style={{fontSize:11,color:C.text2,fontWeight:600}}>{brand}</div>
-              <div style={{fontSize:10,color:C.text3}}>{info.total} 双</div>
+              <div style={{fontSize:10,color:C.text3}}>{info.total} 双{brandValue>0?` · ¥${brandValue.toLocaleString()}`:""}</div>
             </div>);
           })}
         </div>
@@ -868,8 +940,8 @@ function App(){
           :checks.slice(0,10).map(c=>{
             const sh=shoeById[c.shoeId];
             return(<div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div><div style={{fontSize:12,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</div><div style={{fontSize:10,color:C.text3}}>{c.date} {c.diffs?.length||0} 码有差异</div></div>
-              <div style={{fontSize:10,color:C.purple}}>{c.diffs?.join(" / ")||"无差异"}</div>
+              <div><div style={{fontSize:12,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</div><div style={{fontSize:10,color:C.text3}}>{c.date} · {c.reason||"未注明"} · {c.diffs?.length||0} 码差异</div></div>
+              <div style={{fontSize:10,color:C.purple,maxWidth:200,textAlign:"right"}}>{c.diffs?.slice(0,3).join("; ")||"无差异"}{(c.diffs?.length||0)>3?"…":""}</div>
             </div>);
           })
         }
@@ -882,16 +954,16 @@ function App(){
     return(<div>
       <div className="page-header">
         <div><div className="page-title">款式管理</div><div className="page-subtitle">共 {shoes.length} 款</div></div>
-        {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>{setShoeForm({brand:"",name:"",color:""});setShoeModal("add");}} style={{background:C.accent,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>+ 新增款式</button>}
+        {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>{setShoeForm({brand:"",name:"",color:"",price:""});setShoeModal("add");}} style={{background:C.accent,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>+ 新增款式</button>}
       </div>
       <div className="shoe-grid">
         {shoes.map(shoe=>{const total=shoeTotal(shoe.id);return(
           <div key={shoe.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,overflow:"hidden"}}>
             <div style={{display:"flex"}}><PhotoBox shoe={shoe} size={isMobile?90:110} isAdmin={isAdmin} uploadState={uploadState} onUpload={handlePhotoUpload} onRemove={removePhoto} onZoom={setZoomPhoto}/>
               <div style={{flex:1,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-                <div><div style={{fontSize:14,fontWeight:700}}>{shoe.brand} {shoe.name}</div><div style={{fontSize:11,color:C.text3,marginTop:3}}>{shoe.color} · {total} 双</div></div>
+                <div><div style={{fontSize:14,fontWeight:700}}>{shoe.brand} {shoe.name}</div><div style={{fontSize:11,color:C.text3,marginTop:3}}>{shoe.color} · {total} 双{shoe.price>0?` · ¥${shoe.price}`:""}</div></div>
                 {isAdmin&&<div style={{display:"flex",gap:6,marginTop:8}}>
-                  <button onClick={()=>{setShoeForm({brand:shoe.brand,name:shoe.name,color:shoe.color});setShoeModal(shoe);}} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:6,padding:"5px 14px",color:C.text2,fontSize:11,cursor:"pointer"}}>编辑</button>
+                  <button onClick={()=>{setShoeForm({brand:shoe.brand,name:shoe.name,color:shoe.color,price:shoe.price||""});setShoeModal(shoe);}} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:6,padding:"5px 14px",color:C.text2,fontSize:11,cursor:"pointer"}}>编辑</button>
                   <button onClick={()=>deleteShoe(shoe.id)} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:6,padding:"5px 14px",color:C.red,fontSize:11,cursor:"pointer"}}>删除</button>
                 </div>}
               </div>
@@ -1015,10 +1087,10 @@ function App(){
         <div className="settings-section-title">ℹ 系统信息</div>
         <div className="settings-row"><div><div className="settings-label">云同步</div><div className="settings-desc">{CLOUD_ON?"JSONBin 已配置":"未配置（纯本地模式）"}</div></div><SyncBadge syncStatus={syncStatus} lastSync={lastSync} pullCloud={pullCloud}/></div>
         <div className="settings-row"><div><div className="settings-label">图片上传</div><div className="settings-desc">{CDN_ON?"Cloudinary 已配置":"未配置"}</div></div><div style={{fontSize:10,color:CDN_ON?C.green:C.text3}}>{CDN_ON?"✓ 已连接":"- 离线"}</div></div>
-        <div className="settings-row"><div><div className="settings-label">登录状态</div><div className="settings-desc">{isAdmin?"管理员已登录":"普通查看模式"}</div></div>
+        <div className="settings-row"><div><div className="settings-label">登录状态</div><div className="settings-desc">{isAdmin?"管理员已登录（15分钟无操作自动退出）":"普通查看模式"}</div></div>
           {isAdmin?<button onClick={logout} className="focus-ring" style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"6px 14px",color:C.yellow,fontSize:11,cursor:"pointer",fontWeight:600}}>退出登录</button>:<button onClick={()=>requireAdmin(()=>{})} className="focus-ring" style={{background:C.accentBg,border:`1px solid ${C.accentBd}`,borderRadius:8,padding:"6px 14px",color:C.accent,fontSize:11,cursor:"pointer",fontWeight:600}}>登录管理员</button>}
         </div>
-        <div className="settings-row" style={{borderBottom:"none"}}><div><div className="settings-label">版本</div><div className="settings-desc">v2.0 — 安全增强 / 盘点 / 报表 / 可配置尺码</div></div></div>
+        <div className="settings-row" style={{borderBottom:"none"}}><div><div className="settings-label">版本</div><div className="settings-desc">v2.1 — 智能填充 / 采购价 / KPI / 盘点增强 / 自动登出</div></div></div>
       </div>
     </div>);
   }
@@ -1092,7 +1164,13 @@ function App(){
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:isIn?C.green:C.red}}>{isIn?"↑ 入仓登记":"↓ 出仓登记"}</div><button onClick={()=>setBatchModal(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
               <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>选择款式</div><select value={batchModal.shoeId} onChange={e=>setBatchModal({...batchModal,shoeId:e.target.value})} aria-label="选择款式" style={{...inp}}>{shoes.map(s=><option key={s.id} value={s.id}>{s.brand} {s.name} {s.color}</option>)}</select></div>
               {shoe?.photoUrl&&<div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:C.bg,borderRadius:10}}><img src={shoe.photoUrl} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:10,border:`1px solid ${C.border}`,cursor:"pointer"}} onClick={()=>setZoomPhoto(shoe.photoUrl)}/><div><div style={{fontSize:14,fontWeight:700}}>{shoe?.brand} {shoe?.name}</div><div style={{fontSize:11,color:C.text3}}>{shoe?.color}</div></div></div>}
-              <div style={{fontSize:10,color:C.text3,marginBottom:10,display:"flex",justifyContent:"space-between"}}><span>各码数量（双）</span>{totalFill>0&&<span style={{color:isIn?C.green:C.red,fontWeight:600}}>合计 {totalFill} 双</span>}</div>
+              <div style={{fontSize:10,color:C.text3,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}><span>各码数量（双）</span>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <input type="number" min="1" value={batchForm._smartTotal||""} onChange={e=>setBatchForm({...batchForm,_smartTotal:e.target.value})} placeholder="总数" aria-label="均分总数" style={{width:60,background:"#fff",border:`1px solid ${C.border2}`,borderRadius:6,padding:"4px 6px",fontSize:12,outline:"none",textAlign:"center"}}/>
+                  <button onClick={()=>smartFill(parseInt(batchForm._smartTotal)||0)} style={{background:C.accentBg,border:`1px solid ${C.accentBd}`,borderRadius:6,padding:"4px 10px",color:C.accent,fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>均分到各码</button>
+                  {totalFill>0&&<span style={{color:isIn?C.green:C.red,fontWeight:600,fontSize:11}}>合计 {totalFill} 双</span>}
+                </div>
+              </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:14}}>
                 {sizes.map(sz=>{const cur=inv[batchModal.shoeId]?.[sz]||0;const curCol=getSzColor(cur,lowThresh);return(
                   <div key={sz} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1135,6 +1213,17 @@ function App(){
                   );
                 })}
               </div>
+              <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>差异原因</div>
+                <select value={checkReason} onChange={e=>setCheckReason(e.target.value)} aria-label="差异原因" style={{...inp}}>
+                  <option value="">-- 请选择原因 --</option>
+                  <option value="正常损耗">正常损耗</option>
+                  <option value="录入错误">录入错误</option>
+                  <option value="盗窃/丢失">盗窃/丢失</option>
+                  <option value="退货未登记">退货未登记</option>
+                  <option value="调拨差异">调拨差异</option>
+                  <option value="其他">其他</option>
+                </select>
+              </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <button onClick={()=>setCheckModal(null)} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
                 <button onClick={submitCheck} className="focus-ring" style={{background:C.purple,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>确认盘点{diffCount>0?` (${diffCount}码差异)`:""}</button>
@@ -1175,7 +1264,7 @@ function App(){
         <div style={modalWrap(isMobile)} role="dialog" aria-modal="true" aria-label={shoeModal==="add"?"新增款式":"编辑款式"}>
           <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:440}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}><div style={{fontSize:15,fontWeight:700}}>{shoeModal==="add"?"+ 新增款式":"编辑款式"}</div><button onClick={()=>setShoeModal(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-            {[{key:"brand",label:"品牌",ph:"Nike / Adidas / New Balance..."},{key:"name",label:"款式名称",ph:"Air Max / Stan Smith..."},{key:"color",label:"颜色",ph:"黑色 / 白色 / 灰色..."}].map(f=>(<div key={f.key} style={{marginBottom:14}}><label style={{fontSize:10,color:C.text3,marginBottom:6,display:"block"}}>{f.label}</label><input value={shoeForm[f.key]} onChange={e=>setShoeForm({...shoeForm,[f.key]:e.target.value})} placeholder={f.ph} style={{...inp}}/></div>))}
+            {[{key:"brand",label:"品牌",ph:"Nike / Adidas / New Balance...",type:"text"},{key:"name",label:"款式名称",ph:"Air Max / Stan Smith...",type:"text"},{key:"color",label:"颜色",ph:"黑色 / 白色 / 灰色...",type:"text"},{key:"price",label:"采购单价（元）",ph:"0",type:"number"}].map(f=>(<div key={f.key} style={{marginBottom:14}}><label style={{fontSize:10,color:C.text3,marginBottom:6,display:"block"}}>{f.label}</label><input type={f.type} value={shoeForm[f.key]} onChange={e=>setShoeForm({...shoeForm,[f.key]:e.target.value})} placeholder={f.ph} style={{...inp}}/></div>))}
             <div style={{fontSize:10,color:C.text3,marginBottom:16,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.border}`}}>📷 保存后在款式卡片上点击图片区域上传</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <button onClick={()=>setShoeModal(null)} className="focus-ring" style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
