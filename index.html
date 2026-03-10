@@ -342,13 +342,14 @@ function Pagination({page,totalPages,setPage}){
 }
 
 // ─── 简易趋势图组件 ───
-function TrendChart({data,width="100%",height=160,barColor=C.accent}){
+function TrendChart({data,width="100%",height=180,barColor=C.accent}){
   if(!data||!data.length)return<div style={{textAlign:"center",color:C.text3,padding:30,fontSize:12}}>暂无数据</div>;
   const max=Math.max(...data.map(d=>d.value),1);
   return(
     <div style={{width,height,display:"flex",alignItems:"flex-end",gap:2,padding:"0 4px"}} role="img" aria-label="趋势图">
       {data.map((d,i)=>(
         <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+          {d.value>0&&<div style={{fontSize:11,fontWeight:700,color:barColor,lineHeight:1}}>{d.value}</div>}
           <div className="chart-bar" style={{width:"100%",maxWidth:40,height:`${Math.max((d.value/max)*120,d.value>0?4:0)}px`,background:barColor,borderRadius:"4px 4px 0 0"}}/>
           <div style={{fontSize:8,color:C.text3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{d.label}</div>
         </div>
