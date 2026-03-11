@@ -800,15 +800,37 @@ function App(){
 
   // ─── 进出仓页 ───
   function PageOps(){
+    const[checkPickShoe,setCheckPickShoe]=useState(null);
     return(<div>
       <div className="page-header"><div><div className="page-title">进出仓</div><div className="page-subtitle">今日 {todayLogs.length} 笔记录</div></div></div>
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"200px 200px",gap:12,marginBottom:28}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr 1fr":"200px 200px 200px",gap:12,marginBottom:16}}>
         {[{type:"in",icon:"↑",label:"入仓",bg:C.greenBg,border:C.greenBd,color:C.green},{type:"out",icon:"↓",label:"出仓",bg:C.redBg,border:C.redBd,color:C.red}].map(b=>(
           <button key={b.type} className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>openBatch(b.type,null))} style={{background:b.bg,border:`1.5px solid ${b.border}`,borderRadius:16,padding:"24px 12px",cursor:"pointer",color:b.color,textAlign:"center"}}>
             <div style={{fontSize:28,marginBottom:6}} aria-hidden="true">{b.icon}</div><div style={{fontSize:16,fontWeight:700}}>{b.label}</div><div style={{fontSize:10,color:C.text3,marginTop:4}}>多码批量录入</div>{!isAdmin&&<div style={{fontSize:9,color:C.text3,marginTop:2}}>🔒 需要权限</div>}
           </button>
         ))}
+        <button className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>setCheckPickShoe(true))} style={{background:C.purpleBg,border:`1.5px solid ${C.purpleBd}`,borderRadius:16,padding:"24px 12px",cursor:"pointer",color:C.purple,textAlign:"center"}}>
+          <div style={{fontSize:28,marginBottom:6}} aria-hidden="true">☐</div><div style={{fontSize:16,fontWeight:700}}>盘点</div><div style={{fontSize:10,color:C.text3,marginTop:4}}>实物清点核对</div>{!isAdmin&&<div style={{fontSize:9,color:C.text3,marginTop:2}}>🔒 需要权限</div>}
+        </button>
       </div>
+      {/* 盘点选款弹窗 */}
+      {checkPickShoe&&(
+        <div style={modalWrap(isMobile)} onClick={()=>setCheckPickShoe(null)} role="dialog" aria-modal="true" aria-label="选择盘点款式">
+          <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:440}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:C.purple}}>☐ 选择要盘点的款式</div><button onClick={()=>setCheckPickShoe(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:"60vh",overflowY:"auto"}}>
+              {shoes.map(sh=>{const tot=shoeTotal(sh.id);return(
+                <div key={sh.id} onClick={()=>{setCheckPickShoe(null);openCheck(sh.id);}} style={{display:"flex",alignItems:"center",gap:10,background:C.surface,borderRadius:10,padding:"10px 14px",cursor:"pointer",border:`1px solid ${C.border}`,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background="#f9f9f7"} onMouseLeave={e=>e.currentTarget.style.background=C.surface}>
+                  {sh.photoUrl?<img src={sh.photoUrl} alt="" style={{width:36,height:36,objectFit:"cover",borderRadius:8,flexShrink:0}}/>:<div style={{width:36,height:36,borderRadius:8,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👟</div>}
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sh.brand} {sh.name}</div><div style={{fontSize:10,color:C.text3}}>{sh.color}</div></div>
+                  <div style={{fontSize:14,fontWeight:800,color:C.text,flexShrink:0}}>{tot}<span style={{fontSize:10,color:C.text3,marginLeft:2}}>双</span></div>
+                </div>
+              );})}
+            </div>
+            <button onClick={()=>setCheckPickShoe(null)} className="focus-ring" style={{width:"100%",marginTop:14,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
+          </div>
+        </div>
+      )}
       <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>今日记录</div>
       {todayLogs.length===0
         ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>今日暂无记录</div>
