@@ -496,7 +496,9 @@ function App(){
 
   const todayLogs=useMemo(()=>logs.filter(l=>l.date===today),[logs,today]);
   const todayIn=useMemo(()=>todayLogs.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const todayOut=useMemo(()=>todayLogs.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
+  const todayOutGross=useMemo(()=>todayLogs.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
+  const todayReverseOut=useMemo(()=>todayLogs.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
+  const todayOut=useMemo(()=>todayOutGross-todayReverseOut,[todayOutGross,todayReverseOut]);
   const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
   const soldOutStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length,[shoes,inv,sizes]);
   const lowStockStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;})).length,[shoes,inv,sizes,lowThresh]);
@@ -522,7 +524,7 @@ function App(){
   const turnoverRate=useMemo(()=>{
     // 近30天出仓总量 / 平均库存
     const d30=new Date();d30.setDate(d30.getDate()-30);const d30s=d30.toISOString().slice(0,10);
-    const outQty=logs.filter(l=>l.type==="out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0);
+    const outQty=logs.filter(l=>l.type==="out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0)-logs.filter(l=>l.type==="reverse-out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0);
     return totalStock>0?(outQty/totalStock).toFixed(1):"0.0";
   },[logs,totalStock]);
   const lastCheckDate=useMemo(()=>checks.length>0?checks[0].date:null,[checks]);
@@ -543,7 +545,7 @@ function App(){
         date:ds,
         label:`${d.getMonth()+1}/${d.getDate()}`,
         in:dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0),
-        out:dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0),
+        out:dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0)-dl.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0),
       });
     }
     return result;
@@ -864,7 +866,7 @@ function App(){
       {sortedDates.length===0
         ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>暂无记录</div>
         :<>{Object.entries(pagedByDate).map(([date,dl])=>{
-            const din=dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0);const dout=dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0);
+            const din=dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0);const dout=dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0)-dl.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0);
             return(<div key={date} style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{fontSize:12,fontWeight:700,color:C.text2}}>{fmtDate(date)}</div>
