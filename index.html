@@ -49,7 +49,7 @@
   .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
   .page-title{font-size:22px;font-weight:800;}
   .page-subtitle{font-size:12px;color:#999990;margin-top:3px;}
-  .stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:12px;margin-bottom:24px;}
   .stat-card{background:#fff;border:1px solid #e8e8e2;border-radius:14px;padding:16px 18px;}
   .stat-label{font-size:10px;color:#999990;letter-spacing:1px;margin-bottom:8px;}
   .stat-value{font-size:28px;font-weight:800;line-height:1;}
@@ -86,7 +86,7 @@
     .page-title{font-size:18px;}
   }
   @media(min-width:769px) and (max-width:1024px){
-    .stat-grid{grid-template-columns:repeat(3,1fr);}
+    .stat-grid{grid-template-columns:repeat(4,1fr);}
     .main-content{padding:24px;}
   }
 </style>
@@ -500,6 +500,8 @@ function App(){
   const todayOutGross=useMemo(()=>todayLogs.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const todayReverseOut=useMemo(()=>todayLogs.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const todayOut=useMemo(()=>todayOutGross-todayReverseOut,[todayOutGross,todayReverseOut]);
+  const todayOutOnline=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
+  const todayOutStore=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
   const soldOutStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length,[shoes,inv,sizes]);
   const lowStockStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;})).length,[shoes,inv,sizes,lowThresh]);
@@ -615,12 +617,13 @@ function App(){
     const entries=Object.entries(batchForm).filter(([k,v])=>!isNaN(parseInt(k))&&parseInt(v)>0);
     if(!entries.length)return;
     if(batchModal.type==="out"){
+      if(!batchForm.channel){alert("请选择出仓渠道（网店 / 门店）");return;}
       for(const[sz,v]of entries){
         const cur=inv[batchModal.shoeId]?.[parseInt(sz)]||0;
         if(parseInt(v)>cur){alert(`${shoeById[batchModal.shoeId]?.brand} ${shoeById[batchModal.shoeId]?.name} ${sz}码库存不足！当前仅剩 ${cur} 双`);return;}
       }
     }
-    const newLogs=[...entries.map(([sz,v])=>({id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:parseInt(sz),qty:parseInt(v),note:batchForm.note||"",date:today,time:new Date().toISOString()})),...logs];
+    const newLogs=[...entries.map(([sz,v])=>({id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:parseInt(sz),qty:parseInt(v),note:batchForm.note||"",channel:batchModal.type==="out"?batchForm.channel:"",date:today,time:new Date().toISOString()})),...logs];
     updateData(null,newLogs,batchModal.shoeId);
     setBatchModal(null);setBatchForm({});
     showToast(`✓ ${batchModal.type==="in"?"入仓":"出仓"}成功`);
@@ -744,7 +747,7 @@ function App(){
         {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>openBatch("in",null))} style={{background:C.green,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 快速入仓</button>}
       </div>
       <div className="stat-grid" role="region" aria-label="统计数据">
-        {[{label:"总库存",value:totalStock,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"款式总数",value:shoes.length,color:C.accent,bg:C.accentBg,bd:C.accentBd,unit:"款"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
+        {[{label:"总库存",value:totalStock,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🛒 网店出仓",value:todayOutOnline,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🏪 门店出仓",value:todayOutStore,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"款式总数",value:shoes.length,color:C.accent,bg:C.accentBg,bd:C.accentBd,unit:"款"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
           <div key={s.label} className="stat-card" style={{background:s.bg,border:`1px solid ${s.bd}`}} role="status" aria-label={`${s.label} ${s.value} ${s.unit}`}>
             <div className="stat-label">{s.label}</div><div className="stat-value" style={{color:s.color}}>{s.value}</div><div className="stat-unit">{s.unit}</div>
           </div>
@@ -859,11 +862,19 @@ function App(){
 
   // ─── 流水页（含分页） ───
   function PageLogs(){
+    const[channelFilter,setChannelFilter]=useState("all");
     const allLogs=useMemo(()=>{const result=[];sortedDates.forEach(date=>{(logsByDate[date]||[]).forEach(l=>{result.push({...l,_date:date});});});return result;},[sortedDates,logsByDate]);
-    const{page:pg,setPage:setPg,totalPages,paged}=usePagination(allLogs,30);
+    const filteredLogs=useMemo(()=>channelFilter==="all"?allLogs:allLogs.filter(l=>l.channel===channelFilter),[allLogs,channelFilter]);
+    const{page:pg,setPage:setPg,totalPages,paged}=usePagination(filteredLogs,30);
     const pagedByDate=useMemo(()=>{const m={};paged.forEach(l=>{if(!m[l._date])m[l._date]=[];m[l._date].push(l);});return m;},[paged]);
     return(<div>
-      <div className="page-header"><div><div className="page-title">流水记录</div><div className="page-subtitle">共 {logs.length} 条记录</div></div></div>
+      <div className="page-header"><div><div className="page-title">流水记录</div><div className="page-subtitle">共 {logs.length} 条记录</div></div>
+        <div style={{display:"flex",gap:6}}>
+          {[{v:"all",label:"全部"},{v:"网店",label:"🛒 网店"},{v:"门店",label:"🏪 门店"}].map(f=>(
+            <button key={f.v} onClick={()=>{setChannelFilter(f.v);setPg(1);}} style={{background:channelFilter===f.v?C.accent:"#fff",color:channelFilter===f.v?"#fff":C.text2,border:`1px solid ${channelFilter===f.v?C.accent:C.border2}`,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer",fontWeight:channelFilter===f.v?700:400}}>{f.label}</button>
+          ))}
+        </div>
+      </div>
       {sortedDates.length===0
         ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>暂无记录</div>
         :<>{Object.entries(pagedByDate).map(([date,dl])=>{
@@ -879,7 +890,12 @@ function App(){
                     <div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:i<dl.length-1?`1px solid ${C.border}`:"none",opacity:isReverse?0.6:1}}>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
                         <span style={{color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red,fontSize:13}} aria-hidden="true">{isReverse?"↩":isAdjust?"☐":isIn?"↑":"↓"}</span>
-                        <div><span style={{fontSize:12,fontWeight:500}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</span><span style={{fontSize:11,color:C.text3,marginLeft:6}}>{l.size}码</span>{l.note&&<span style={{fontSize:10,color:C.text3,marginLeft:6}}>{l.note}</span>}</div>
+                        <div>
+                          <span style={{fontSize:12,fontWeight:500}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</span>
+                          <span style={{fontSize:11,color:C.text3,marginLeft:6}}>{l.size}码</span>
+                          {l.channel&&<span style={{fontSize:9,marginLeft:6,padding:"1px 6px",borderRadius:4,background:l.channel==="网店"?C.accentBg:C.purpleBg,color:l.channel==="网店"?C.accent:C.purple,fontWeight:600}}>{l.channel==="网店"?"🛒":"🏪"}{l.channel}</span>}
+                          {l.note&&<span style={{fontSize:10,color:C.text3,marginLeft:6}}>{l.note}</span>}
+                        </div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         <div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red}}>{(isIn||l.type==="reverse-out"||(isAdjust&&l.qty>0))?"+":"-"}{Math.abs(l.qty)}</div><div style={{fontSize:9,color:C.text3}}>{fmtTime(l.time)}</div></div>
@@ -1204,6 +1220,7 @@ function App(){
                   </div>
                 );})}
               </div>
+              {!isIn&&<div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>出仓渠道 <span style={{color:C.red}}>*</span></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{["网店","门店"].map(ch=><button key={ch} type="button" onClick={()=>setBatchForm({...batchForm,channel:ch})} style={{padding:"10px 0",borderRadius:10,border:`1.5px solid ${batchForm.channel===ch?C.red:C.border2}`,background:batchForm.channel===ch?C.redBg:"#fff",color:batchForm.channel===ch?C.red:C.text2,fontWeight:batchForm.channel===ch?700:400,fontSize:13,cursor:"pointer"}}>{ch==="网店"?"🛒 网店":"🏪 门店"}</button>)}</div></div>}
               <div style={{marginBottom:18}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>备注（可选）</div><input type="text" value={batchForm.note||""} onChange={e=>setBatchForm({...batchForm,note:e.target.value})} placeholder="如：供应商补货 / 门店出货..." aria-label="备注" style={{...inp}}/></div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <button onClick={()=>{setBatchModal(null);setBatchForm({});}} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
