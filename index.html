@@ -143,13 +143,13 @@ const OLD_KEY_SHOES="wms_shoes_v3",OLD_KEY_LOGS="wms_logs_v3",OLD_KEY_THRESH="wm
 const DEFAULT_PW_HASH=null;
 const IDLE_TIMEOUT=15*60*1000; // 15分钟无操作自动登出
 const DEFAULT_SHOES=[
-  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:"",price:0},
-  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:"",price:0},
-  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:"",price:0},
-  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:"",price:0},
-  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:"",price:0},
-  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:"",price:0},
-  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:"",price:0},
+  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:"",price:0,category:"鞋"},
+  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:"",price:0,category:"鞋"},
+  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:"",price:0,category:"鞋"},
+  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:"",price:0,category:"鞋"},
+  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:"",price:0,category:"鞋"},
+  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:"",price:0,category:"鞋"},
+  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:"",price:0,category:"鞋"},
 ];
 
 // ═══════════════════════════════════════════════
@@ -503,6 +503,8 @@ function App(){
   const todayOutOnline=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const todayOutStore=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
+  function getCategory(shoe){return(shoe.name||"").includes("袜")?"袜子":"鞋";}
+  const categoryStock=useMemo(()=>{const m={};shoes.forEach(sh=>{const cat=getCategory(sh);if(!m[cat])m[cat]=0;m[cat]+=shoeTotal(sh.id);});return m;},[shoes,shoeTotal]);
   const soldOutStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length,[shoes,inv,sizes]);
   const lowStockStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;})).length,[shoes,inv,sizes,lowThresh]);
 
@@ -646,6 +648,15 @@ function App(){
     else{updateData(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm,price:priceVal}:s),null);}
     setShoeModal(null);setShoeForm({brand:"",name:"",color:"",price:""});showToast("✓ 保存成功");
   }
+
+  // ─── 删除流水 ───
+  function deleteLog(log){
+    const typeLabel=log.type==="in"?"入仓":log.type==="out"?"出仓":log.type?.startsWith("reverse")?"冲正":"盘点调整";
+    if(!confirm(`确认删除这条记录？\n${typeLabel} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size}码 ×${log.qty}\n⚠️ 删除后库存将同步更新，此操作不可撤销`))return;
+    const newLogs=logs.filter(l=>l.id!==log.id);
+    updateData(null,newLogs,log.shoeId);
+    showToast("✓ 已删除");
+  }
   function deleteShoe(id){if(!confirm("确认删除该款鞋子？相关流水记录将保留。"))return;updateData(shoes.filter(s=>s.id!==id),null);}
 
   // ─── 盘点 ───
@@ -760,6 +771,21 @@ function App(){
           <button onClick={()=>setPage("report")} style={{background:C.yellow,border:"none",borderRadius:8,padding:"6px 14px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>查看报表</button>
         </div>
       )}
+      {/* 品类库存面板 */}
+      {Object.keys(categoryStock).length>0&&(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 18px",marginBottom:16}}>
+          <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>品类库存</div>
+          <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+            {Object.entries(categoryStock).map(([cat,qty])=>(
+              <div key={cat} style={{flex:"1 0 auto",minWidth:100,background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 16px",textAlign:"center"}}>
+                <div style={{fontSize:22,marginBottom:4}}>{cat==="鞋"?"👟":"🧦"}</div>
+                <div style={{fontSize:24,fontWeight:800,color:C.text,lineHeight:1}}>{qty}</div>
+                <div style={{fontSize:11,color:C.text3,marginTop:4}}>{cat} · 双</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <BrandSection/>
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
         <div style={{flex:1,minWidth:180,position:"relative"}}>
@@ -851,6 +877,7 @@ function App(){
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{fontSize:20,fontWeight:800,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red}}>{(isIn||l.type==="reverse-out"||l.type==="check-adjust"&&l.qty>0)?"+":"-"}{Math.abs(l.qty)}</div>
                   {isAdmin&&!isReverse&&!isAdjust&&<button onClick={()=>reverseLog(l)} className="focus-ring" style={{background:C.purpleBg,border:`1px solid ${C.purpleBd}`,borderRadius:7,padding:"4px 8px",color:C.purple,fontSize:11,cursor:"pointer",fontWeight:600}}>冲正</button>}
+                  {isAdmin&&<button onClick={()=>deleteLog(l)} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:7,padding:"4px 8px",color:C.red,fontSize:11,cursor:"pointer",fontWeight:600}}>删除</button>}
                 </div>
               </div>
             );
