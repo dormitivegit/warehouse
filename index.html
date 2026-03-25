@@ -503,7 +503,7 @@ function App(){
   const todayOutOnline=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const todayOutStore=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
   const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
-  function getCategory(shoe){return(shoe.name||"").includes("袜")?"袜子":"鞋";}
+  function getCategory(shoe){return(shoe.name||"").includes("袜子")?"袜子":"鞋";}
   const categoryStock=useMemo(()=>{const m={};shoes.forEach(sh=>{const cat=getCategory(sh);if(!m[cat])m[cat]=0;m[cat]+=shoeTotal(sh.id);});return m;},[shoes,shoeTotal]);
   const soldOutStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length,[shoes,inv,sizes]);
   const lowStockStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;})).length,[shoes,inv,sizes,lowThresh]);
