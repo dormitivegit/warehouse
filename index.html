@@ -640,6 +640,14 @@ function App(){
     showToast("✓ 已冲正");
   }
 
+  // ─── 删除当天流水 ───
+  function deleteLog(log){
+    const typeLabel=log.type==="in"?"入仓":log.type==="out"?"出仓":log.type?.startsWith("reverse")?"冲正":"盘点调整";
+    if(!confirm(`确认删除这条记录？\n${typeLabel} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size}码 ×${log.qty}\n⚠️ 删除后库存将同步更新，此操作不可撤销`))return;
+    updateData(null,logs.filter(l=>l.id!==log.id),log.shoeId);
+    showToast("✓ 已删除");
+  }
+
   // ─── 款式管理 ───
   function submitShoe(){
     if(!shoeForm.brand||!shoeForm.name)return;
