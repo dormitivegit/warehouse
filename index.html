@@ -49,7 +49,7 @@
   .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
   .page-title{font-size:22px;font-weight:800;}
   .page-subtitle{font-size:12px;color:#999990;margin-top:3px;}
-  .stat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:12px;margin-bottom:24px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:24px;}
   .stat-card{background:#fff;border:1px solid #e8e8e2;border-radius:14px;padding:16px 18px;}
   .stat-label{font-size:10px;color:#999990;letter-spacing:1px;margin-bottom:8px;}
   .stat-value{font-size:28px;font-weight:800;line-height:1;}
@@ -758,7 +758,7 @@ function App(){
         {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>openBatch("in",null))} style={{background:C.green,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 快速入仓</button>}
       </div>
       <div className="stat-grid" role="region" aria-label="统计数据">
-        {[{label:"👟 鞋库存",value:categoryStock["鞋"]||0,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"🧦 袜子库存",value:categoryStock["袜子"]||0,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🛒 网店出仓",value:todayOutOnline,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🏪 门店出仓",value:todayOutStore,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
+        {[{label:"总库存",value:totalStock,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🛒 网店出仓",value:todayOutOnline,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🏪 门店出仓",value:todayOutStore,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
           <div key={s.label} className="stat-card" style={{background:s.bg,border:`1px solid ${s.bd}`}} role="status" aria-label={`${s.label} ${s.value} ${s.unit}`}>
             <div className="stat-label">{s.label}</div><div className="stat-value" style={{color:s.color}}>{s.value}</div><div className="stat-unit">{s.unit}</div>
           </div>
