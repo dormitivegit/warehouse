@@ -494,7 +494,7 @@ function App(){
   const inv=useMemo(()=>buildInv(shoes,logs,sizes),[shoes,logs,sizes]);
   const today=todayStr();
   const shoeById=useMemo(()=>{const m={};shoes.forEach(s=>{m[s.id]=s;});return m;},[shoes]);
-  const shoeTotal=useCallback((id)=>sizes.reduce((a,sz)=>a+(inv[id]?.[sz]||0),0),[inv,sizes]);
+  const shoeTotal=useCallback((id)=>sizes.reduce((a,sz)=>a+(inv[id]?.[sz]||0),0)+(inv[id]?.[0]||0),[inv,sizes]);
 
   const todayLogs=useMemo(()=>logs.filter(l=>l.date===today),[logs,today]);
   const todayIn=useMemo(()=>todayLogs.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0),[todayLogs]);
@@ -506,8 +506,8 @@ function App(){
   const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
   function getCategory(shoe){return(shoe.name||"").includes("袜子")?"袜子":"鞋";}
   const categoryStock=useMemo(()=>{const m={};shoes.forEach(sh=>{const cat=getCategory(sh);if(!m[cat])m[cat]=0;m[cat]+=shoeTotal(sh.id);});return m;},[shoes,shoeTotal]);
-  const soldOutStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0)).length,[shoes,inv,sizes]);
-  const lowStockStyles=useMemo(()=>shoes.filter(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;})).length,[shoes,inv,sizes,lowThresh]);
+  const soldOutStyles=useMemo(()=>shoes.filter(sh=>{if((inv[sh.id]?.[0]||0)>0)return false;return sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0);}).length,[shoes,inv,sizes]);
+  const lowStockStyles=useMemo(()=>shoes.filter(sh=>{if((inv[sh.id]?.[0]||0)>0)return false;return sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;});}).length,[shoes,inv,sizes,lowThresh]);
 
   const brandMap=useMemo(()=>{const m={};shoes.forEach(sh=>{if(!m[sh.brand])m[sh.brand]={total:0,shoes:[]};m[sh.brand].total+=shoeTotal(sh.id);m[sh.brand].shoes.push(sh);});return m;},[shoes,shoeTotal]);
   const sizeTotal=useMemo(()=>{const st={};sizes.forEach(sz=>{st[sz]=shoes.reduce((a,sh)=>a+(inv[sh.id]?.[sz]||0),0);});return st;},[shoes,inv,sizes]);
@@ -624,6 +624,10 @@ function App(){
     if(batchForm._totalMode){
       const qty=parseInt(batchForm._totalQty)||0;
       if(!qty){return;}
+      if(batchModal.type==="out"){
+        const cur=inv[batchModal.shoeId]?.[0]||0;
+        if(qty>cur){alert(`${shoeById[batchModal.shoeId]?.brand} ${shoeById[batchModal.shoeId]?.name} 库存不足！当前仅剩 ${cur} 双`);return;}
+      }
       newEntries=[{id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:0,qty,note:batchForm.note||"",channel:batchModal.type==="out"?batchForm.channel:"",date:today,time:new Date().toISOString()}];
     }else{
       const entries=Object.entries(batchForm).filter(([k,v])=>!isNaN(parseInt(k))&&parseInt(v)>0);
@@ -663,7 +667,7 @@ function App(){
   // ─── 删除流水 ───
   function deleteLog(log){
     const typeLabel=log.type==="in"?"入仓":log.type==="out"?"出仓":log.type?.startsWith("reverse")?"冲正":"盘点调整";
-    if(!confirm(`确认删除这条记录？\n${typeLabel} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size}码 ×${log.qty}\n⚠️ 删除后库存将同步更新，此操作不可撤销`))return;
+    if(!confirm(`确认删除这条记录？\n${typeLabel} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size===0?"无码":log.size+"码"} ×${log.qty}\n⚠️ 删除后库存将同步更新，此操作不可撤销`))return;
     const newLogs=logs.filter(l=>l.id!==log.id);
     updateData(null,newLogs,log.shoeId);
     showToast("✓ 已删除");
