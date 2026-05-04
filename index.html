@@ -592,6 +592,7 @@
       <div class="field"><label>${first ? "新密码" : "密码"}</label><input class="input" id="authPassword" type="password" autocomplete="current-password" autofocus placeholder="${first ? "至少 6 位" : "输入管理员密码"}"></div>
       ${first ? `<div class="field"><label>确认密码</label><input class="input" id="authPassword2" type="password" autocomplete="new-password"></div>` : ""}
       <p style="color:var(--muted);font-size:12px;line-height:1.7">密码会在本机浏览器中加密派生后保存，用于进入管理员模式。请记好密码，并定期导出 JSON 备份。</p>
+      ${first ? "" : `<button class="btn link" style="font-size:12px;margin-top:4px" data-action="reset-auth">忘记密码？重置本机管理员密码</button>`}
       <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-auth">${first ? "设置并进入" : "登录"}</button></div>
     `);
   }
@@ -737,6 +738,17 @@
     state.isAdmin = false;
     renderShell();
     showToast(message);
+  }
+  function resetAuth(){
+    const ok = confirm("确认重置本机管理员密码？\n\n这只会清除当前浏览器保存的管理员密码，不会删除库存、流水、款式和备份数据。重置后需要重新设置新密码。");
+    if(!ok) return;
+    localStorage.removeItem(keys.auth);
+    state.auth = null;
+    state.isAdmin = false;
+    clearTimeout(adminTimer);
+    state.modal = {type:"auth"};
+    renderShell();
+    showToast("管理员密码已重置，请设置新密码");
   }
   function closeModal(shouldRender=true){
     state.modal = null;
@@ -982,6 +994,7 @@
     const action = actionEl.dataset.action;
     if(action === "close-modal") return closeModal();
     if(action === "submit-auth") return submitAuth();
+    if(action === "reset-auth") return resetAuth();
     if(action === "submit-change-auth") return submitChangeAuth();
     if(action === "submit-stock") return submitStock();
     if(action === "submit-check") return submitCheck();
