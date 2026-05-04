@@ -182,6 +182,7 @@
     threshold: "wms_thresh_v2",
     thresholdV1: "wms_thresh_v1"
   };
+  const IDLE_TIMEOUT = 15 * 60 * 1000;
   const defaultSizes = ["36","37","38","39","40","41","42","43","44"];
   const defaultProducts = [
     {id:"p1",brand:"Nike",name:"Air Max",color:"黑色",price:0,image:""},
@@ -214,6 +215,7 @@
   };
   let pendingAdminAction = null;
   let toastTimer = null;
+  let adminTimer = null;
 
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
@@ -550,9 +552,9 @@
       ${pageHead("系统设置", "安全、尺码、备份与迁移建议")}
       <section class="grid settings">
         <div class="panel">
-          <div class="setting-row"><div><strong>管理员密码</strong><p>本地版只做轻量防误操作，不能替代后端鉴权。生产环境应移到服务端。</p></div>${state.isAdmin ? `<button class="btn soft" data-action="logout">退出</button>` : `<button class="btn primary" data-action="login">登录 / 设置</button>`}</div>
-          <div class="setting-row"><div><strong>低库存阈值</strong><p>当前小于等于 ${state.threshold} 双时标记为低库存。</p></div><div style="display:flex;gap:8px"><input class="input" id="threshold" type="number" min="1" max="99" value="${state.threshold}" style="width:86px"><button class="btn primary" data-action="save-threshold">保存</button></div></div>
-          <div class="setting-row"><div><strong>尺码列表</strong><p>支持半码。修复了旧版使用 parseInt 导致 42.5 被记成 42 的问题。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><input class="input" id="sizes" value="${esc(state.sizes.join(", "))}" style="min-width:280px"><button class="btn primary" data-action="save-sizes">保存</button></div></div>
+          <div class="setting-row"><div><strong>管理员密码</strong><p>${state.auth ? "已设置管理员密码。登录后 15 分钟无操作会自动退出。" : "尚未设置管理员密码。首次点击管理操作时会要求设置密码。"} 本地版只做轻量防误操作，不能替代后端鉴权。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${state.isAdmin ? `<button class="btn primary" data-action="change-password">修改密码</button><button class="btn soft" data-action="logout">退出</button>` : `<button class="btn primary" data-action="login">登录 / 设置</button>`}</div></div>
+          <div class="setting-row"><div><strong>低库存阈值</strong><p>当前小于等于 ${state.threshold} 双时标记为低库存。保存需要管理员权限。</p></div><div style="display:flex;gap:8px"><input class="input" id="threshold" type="number" min="1" max="99" value="${state.threshold}" style="width:86px"><button class="btn primary" data-action="save-threshold">保存</button></div></div>
+          <div class="setting-row"><div><strong>尺码列表</strong><p>支持半码。修改尺码会影响库存录入界面，保存需要管理员权限。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><input class="input" id="sizes" value="${esc(state.sizes.join(", "))}" style="min-width:280px"><button class="btn primary" data-action="save-sizes">保存</button></div></div>
         </div>
         <div class="panel">
           <div class="setting-row"><div><strong>导出 JSON 备份</strong><p>包含款式、流水、尺码、盘点记录，可完整恢复。</p></div><button class="btn green" data-action="export-json">导出 JSON</button></div>
@@ -575,6 +577,7 @@
       return;
     }
     if(state.modal.type === "auth") return renderAuthModal();
+    if(state.modal.type === "change-auth") return renderChangePasswordModal();
     if(state.modal.type === "product") return renderProductModal();
     if(state.modal.type === "stock") return renderStockModal(inv);
     if(state.modal.type === "pick-check") return renderPickCheck(inv);
@@ -590,6 +593,15 @@
       ${first ? `<div class="field"><label>确认密码</label><input class="input" id="authPassword2" type="password" autocomplete="new-password"></div>` : ""}
       <p style="color:var(--muted);font-size:12px;line-height:1.7">本地密码使用 PBKDF2 派生后保存，但前端仍无法提供真正安全权限。正式使用请接入后端登录。</p>
       <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-auth">${first ? "设置并进入" : "登录"}</button></div>
+    `);
+  }
+  function renderChangePasswordModal(){
+    modalFrame("修改管理员密码", `
+      <div class="field"><label>原密码</label><input class="input" id="oldPassword" type="password" autocomplete="current-password" autofocus></div>
+      <div class="field"><label>新密码</label><input class="input" id="newPassword" type="password" autocomplete="new-password" placeholder="至少 6 位"></div>
+      <div class="field"><label>确认新密码</label><input class="input" id="newPassword2" type="password" autocomplete="new-password"></div>
+      <p style="color:var(--muted);font-size:12px;line-height:1.7">修改后需要使用新密码进入管理员模式。</p>
+      <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-change-auth">保存新密码</button></div>
     `);
   }
   function renderProductModal(){
@@ -662,6 +674,7 @@
   }
   function requireAdmin(action){
     if(state.isAdmin){
+      resetAdminTimer();
       action();
       return;
     }
@@ -680,16 +693,50 @@
       state.auth = {salt, hash, iterations:120000};
       save(keys.auth, state.auth);
       state.isAdmin = true;
+      resetAdminTimer();
     }else{
       const hash = await pbkdf2(pass, state.auth.salt, state.auth.iterations || 120000);
       if(hash !== state.auth.hash) return showToast("密码错误", true);
       state.isAdmin = true;
+      resetAdminTimer();
     }
     const action = pendingAdminAction;
     pendingAdminAction = null;
     closeModal(false);
     showToast("已进入管理员模式");
     if(action) action();
+  }
+  async function submitChangeAuth(){
+    if(!state.auth) return showToast("尚未设置管理员密码", true);
+    const oldPass = document.getElementById("oldPassword")?.value || "";
+    const newPass = document.getElementById("newPassword")?.value || "";
+    const newPass2 = document.getElementById("newPassword2")?.value || "";
+    const oldHash = await pbkdf2(oldPass, state.auth.salt, state.auth.iterations || 120000);
+    if(oldHash !== state.auth.hash) return showToast("原密码错误", true);
+    if(newPass.length < 6) return showToast("新密码至少 6 位", true);
+    if(newPass !== newPass2) return showToast("两次密码不一致", true);
+    const salt = uid();
+    const hash = await pbkdf2(newPass, salt);
+    state.auth = {salt, hash, iterations:120000};
+    save(keys.auth, state.auth);
+    resetAdminTimer();
+    closeModal();
+    showToast("管理员密码已更新");
+  }
+  function resetAdminTimer(){
+    clearTimeout(adminTimer);
+    if(!state.isAdmin) return;
+    adminTimer = setTimeout(() => {
+      state.isAdmin = false;
+      renderShell();
+      showToast("管理员已自动退出");
+    }, IDLE_TIMEOUT);
+  }
+  function logoutAdmin(message="已退出管理员"){
+    clearTimeout(adminTimer);
+    state.isAdmin = false;
+    renderShell();
+    showToast(message);
   }
   function closeModal(shouldRender=true){
     state.modal = null;
@@ -707,6 +754,7 @@
     });
   }
   function submitStock(){
+    if(!state.isAdmin) return showToast("请先登录管理员", true);
     const productId = document.getElementById("stockProduct")?.value;
     const mode = state.modal.mode;
     const channel = document.getElementById("channel")?.value || "";
@@ -730,6 +778,7 @@
     showToast(mode === "in" ? "入仓成功" : "出仓成功");
   }
   function submitCheck(){
+    if(!state.isAdmin) return showToast("请先登录管理员", true);
     const productId = document.getElementById("stockProduct")?.value;
     const reason = document.getElementById("checkReason")?.value || "未注明";
     const inv = buildInventory();
@@ -781,6 +830,7 @@
   }
   function saveProduct(event){
     event.preventDefault();
+    if(!state.isAdmin) return showToast("请先登录管理员", true);
     const form = new FormData(event.target);
     const product = {
       brand: String(form.get("brand") || "").trim(),
@@ -799,6 +849,7 @@
     showToast("款式已保存");
   }
   async function setImage(productId, file){
+    if(!state.isAdmin) return requireAdmin(() => setImage(productId, file));
     if(!file) return;
     if(!file.type.startsWith("image/")) return showToast("请选择图片文件", true);
     if(file.size > 5 * 1024 * 1024) return showToast("图片不要超过 5MB", true);
@@ -857,6 +908,7 @@
     URL.revokeObjectURL(url);
   }
   function importJson(file){
+    if(!state.isAdmin) return requireAdmin(() => importJson(file));
     if(!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -891,22 +943,29 @@
       const action = actionEl.dataset.action;
       const id = actionEl.dataset.id;
       if(action === "login") return requireAdmin(() => {});
-      if(action === "logout"){ state.isAdmin = false; renderShell(); return showToast("已退出管理员"); }
+      if(action === "logout") return logoutAdmin();
       if(action === "open-stock") return openStock(actionEl.dataset.mode, id);
-      if(action === "pick-check"){ state.modal = {type:"pick-check"}; return renderShell(); }
+      if(action === "pick-check") return requireAdmin(() => { state.modal = {type:"pick-check"}; renderShell(); });
       if(action === "reverse-log") return reverseLog(id);
       if(action === "add-product") return requireAdmin(() => { state.modal = {type:"product"}; renderShell(); });
       if(action === "edit-product") return requireAdmin(() => { state.modal = {type:"product", id}; renderShell(); });
       if(action === "pick-image") return requireAdmin(() => document.querySelector(`[data-image-input="${CSS.escape(id)}"]`)?.click());
+      if(action === "change-password") return requireAdmin(() => { state.modal = {type:"change-auth"}; renderShell(); });
       if(action === "save-threshold"){
-        const v = Number(document.getElementById("threshold")?.value);
-        if(!v || v < 1 || v > 99) return showToast("阈值请输入 1-99", true);
-        state.threshold = v; saveData(); renderShell(); return showToast("阈值已保存");
+        const rawThreshold = document.getElementById("threshold")?.value;
+        return requireAdmin(() => {
+          const v = Number(rawThreshold);
+          if(!v || v < 1 || v > 99) return showToast("阈值请输入 1-99", true);
+          state.threshold = v; saveData(); renderShell(); return showToast("阈值已保存");
+        });
       }
       if(action === "save-sizes"){
-        const next = normalizeSizes((document.getElementById("sizes")?.value || "").split(/[,，\s]+/));
-        if(next.length < 2) return showToast("至少保留两个尺码", true);
-        state.sizes = next; saveData(); renderShell(); return showToast("尺码已保存");
+        const rawSizes = document.getElementById("sizes")?.value || "";
+        return requireAdmin(() => {
+          const next = normalizeSizes(rawSizes.split(/[,，\s]+/));
+          if(next.length < 2) return showToast("至少保留两个尺码", true);
+          state.sizes = next; saveData(); renderShell(); return showToast("尺码已保存");
+        });
       }
       if(action === "export-json") return exportJson();
       if(action === "export-csv") return exportCsv();
@@ -923,6 +982,7 @@
     const action = actionEl.dataset.action;
     if(action === "close-modal") return closeModal();
     if(action === "submit-auth") return submitAuth();
+    if(action === "submit-change-auth") return submitChangeAuth();
     if(action === "submit-stock") return submitStock();
     if(action === "submit-check") return submitCheck();
     if(action === "open-stock") return openStock(actionEl.dataset.mode, actionEl.dataset.id);
@@ -968,6 +1028,11 @@
   });
   window.addEventListener("keydown", event => {
     if(event.key === "Escape" && state.modal) closeModal();
+  });
+  ["mousedown","keydown","touchstart","scroll"].forEach(name => {
+    window.addEventListener(name, () => {
+      if(state.isAdmin) resetAdminTimer();
+    }, {passive:true});
   });
 
   renderShell();
