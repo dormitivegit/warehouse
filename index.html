@@ -3,1360 +3,976 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仓库管理系统</title>
-<!-- ═══ 配置区：在此填入你的服务密钥 ═══ -->
-<meta name="wms-bin-id" content="69a92606ae596e708f61143c">
-<meta name="wms-master-key" content="$2a$10$3YSGRJC241CXsBpeivsTP.NHutZ7G.qgoZyFYBB2IJs4CX/OHeno.">
-<meta name="wms-cdn-name" content="dvkf38yoa">
-<meta name="wms-cdn-preset" content="wms_unsigned">
-<!-- ═══ 配置区结束 ═══ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<title>仓库管理系统 - 优化版</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{background:#f5f5f0;font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;color:#1a1a1a;}
-  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1;}
-  select option{background:#fff;color:#1a1a1a;}
-  ::-webkit-scrollbar{width:5px;height:5px;}
-  ::-webkit-scrollbar-track{background:#f0f0ec;}
-  ::-webkit-scrollbar-thumb{background:#d0d0c8;border-radius:3px;}
-  .card-hover:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08);transform:translateY(-1px);}
-  .card-hover{transition:box-shadow 0.2s,transform 0.2s;}
-  .btn-hover:hover{opacity:0.85;}
-  .photo-upload:hover{border-color:#888 !important;background:#f0f0ec !important;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .spin{animation:spin 1s linear infinite;display:inline-block;}
-  @keyframes fadeIn{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
-  .zoom-in{animation:fadeIn 0.15s ease-out;}
-  @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-  .slide-up{animation:slideUp 0.2s ease-out;}
-  @keyframes flash{0%{background:rgba(37,99,235,0.18);}100%{background:transparent;}}
-  .qty-flash{animation:flash 0.7s ease-out;}
-  body.modal-open{overflow:hidden;}
-  .app-shell{display:flex;min-height:100vh;}
-  .sidebar{width:220px;flex-shrink:0;background:#fff;border-right:1px solid #e8e8e2;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
-  .sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid #f0f0ec;}
-  .sidebar-logo .en{font-size:9px;letter-spacing:4px;color:#999990;text-transform:uppercase;margin-bottom:4px;}
-  .sidebar-logo .zh{font-size:20px;font-weight:800;}
-  .sidebar-nav{padding:12px 10px;flex:1;}
-  .sidebar-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;font-size:13px;font-weight:500;color:#666660;border:none;background:none;width:100%;text-align:left;transition:background 0.15s,color 0.15s;}
-  .sidebar-nav-item:hover{background:#f5f5f0;color:#1a1a1a;}
-  .sidebar-nav-item.active{background:#eff6ff;color:#2563eb;font-weight:700;}
-  .sidebar-nav-item .nav-icon{font-size:16px;width:20px;text-align:center;}
-  .sidebar-bottom{padding:12px 10px 20px;border-top:1px solid #f0f0ec;}
-  .main-content{flex:1;min-width:0;padding:28px 32px;max-width:1100px;}
-  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
-  .page-title{font-size:22px;font-weight:800;}
-  .page-subtitle{font-size:12px;color:#999990;margin-top:3px;}
-  .stat-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:24px;}
-  .stat-card{background:#fff;border:1px solid #e8e8e2;border-radius:14px;padding:16px 18px;}
-  .stat-label{font-size:10px;color:#999990;letter-spacing:1px;margin-bottom:8px;}
-  .stat-value{font-size:28px;font-weight:800;line-height:1;}
-  .stat-unit{font-size:10px;color:#999990;margin-top:4px;}
-  .shoe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
-  .log-table{width:100%;border-collapse:collapse;}
-  .log-table th{font-size:10px;color:#999990;letter-spacing:1px;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:2px solid #e8e8e2;background:#f9f9f7;}
-  .log-table td{padding:11px 12px;border-bottom:1px solid #f0f0ec;font-size:13px;vertical-align:middle;}
-  .log-table tr:hover td{background:#fafaf8;}
-  .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8e8e2;padding:8px 0 16px;z-index:50;}
-  .mobile-nav-inner{display:flex;max-width:480px;margin:0 auto;}
-  .mobile-nav-btn{flex:1;background:none;border:none;cursor:pointer;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:3px;}
-  .settings-section{background:#fff;border:1px solid #e8e8e2;border-radius:16px;padding:22px 24px;margin-bottom:16px;}
-  .settings-section-title{font-size:11px;font-weight:700;letter-spacing:2px;color:#999990;text-transform:uppercase;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid #f0f0ec;}
-  .settings-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f5f5f0;}
-  .settings-row:last-child{border-bottom:none;padding-bottom:0;}
-  .settings-label{font-size:13px;font-weight:600;color:#1a1a1a;}
-  .settings-desc{font-size:11px;color:#999990;margin-top:2px;}
-  .focus-ring:focus-visible{outline:2px solid #2563eb;outline-offset:2px;border-radius:4px;}
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
-  .chart-bar{transition:height 0.3s ease-out;}
-  .pagination{display:flex;gap:4px;align-items:center;justify-content:center;margin-top:16px;}
-  .pagination button{background:#fff;border:1px solid #e8e8e2;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;color:#666660;transition:all 0.15s;}
-  .pagination button:hover{background:#f5f5f0;}
-  .pagination button.active{background:#2563eb;color:#fff;border-color:#2563eb;}
-  .pagination button:disabled{opacity:0.4;cursor:not-allowed;}
-  @media(max-width:768px){
-    .sidebar{display:none !important;}
-    .main-content{padding:14px 14px 84px;max-width:none;}
-    .mobile-nav{display:block;}
-    .stat-grid{grid-template-columns:1fr 1fr;}
-    .shoe-grid{grid-template-columns:1fr;}
-    .page-header{margin-bottom:16px;}
-    .page-title{font-size:18px;}
+  :root{
+    --bg:#f6f7f9;
+    --panel:#ffffff;
+    --panel-soft:#f9fafb;
+    --line:#e5e7eb;
+    --line-strong:#d1d5db;
+    --text:#111827;
+    --muted:#6b7280;
+    --faint:#9ca3af;
+    --blue:#2563eb;
+    --blue-soft:#eff6ff;
+    --green:#16a34a;
+    --green-soft:#f0fdf4;
+    --red:#dc2626;
+    --red-soft:#fef2f2;
+    --amber:#d97706;
+    --amber-soft:#fffbeb;
+    --violet:#7c3aed;
+    --violet-soft:#f5f3ff;
+    --shadow:0 16px 40px rgba(15,23,42,.08);
   }
-  @media(min-width:769px) and (max-width:1024px){
-    .stat-grid{grid-template-columns:repeat(4,1fr);}
-    .main-content{padding:24px;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .app{min-height:100vh;display:grid;grid-template-columns:240px minmax(0,1fr)}
+  .sidebar{position:sticky;top:0;height:100vh;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .brand{padding:24px 20px 18px;border-bottom:1px solid var(--line)}
+  .brand small{display:block;color:var(--faint);letter-spacing:3px;text-transform:uppercase;font-size:10px;margin-bottom:4px}
+  .brand strong{font-size:22px;letter-spacing:.5px}
+  .nav{padding:12px;display:grid;gap:4px;flex:1}
+  .nav button{border:0;background:transparent;color:var(--muted);border-radius:8px;padding:11px 12px;text-align:left;display:flex;align-items:center;gap:10px}
+  .nav button:hover{background:var(--panel-soft);color:var(--text)}
+  .nav button.active{background:var(--blue-soft);color:var(--blue);font-weight:700}
+  .sidebar-foot{padding:14px 12px 18px;border-top:1px solid var(--line)}
+  .main{max-width:1240px;width:100%;padding:28px 32px 96px}
+  .mobile-bar{display:none}
+  .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+  .page-title{font-size:24px;font-weight:800;line-height:1.1}
+  .page-subtitle{color:var(--muted);font-size:13px;margin-top:6px}
+  .grid{display:grid;gap:14px}
+  .stats{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:15px 16px;min-height:98px}
+  .stat .label{font-size:11px;color:var(--muted);letter-spacing:.8px;margin-bottom:9px}
+  .stat .value{font-size:30px;font-weight:850;line-height:1}
+  .stat .hint{font-size:11px;color:var(--faint);margin-top:8px}
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
+  .search{position:relative;flex:1;min-width:240px}
+  .search input{width:100%;padding:11px 14px 11px 36px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;outline:none}
+  .search span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .select,.input{border:1px solid var(--line-strong);border-radius:8px;background:#fff;padding:10px 12px;outline:none;min-height:42px}
+  .btn{border:1px solid var(--line-strong);background:#fff;color:var(--text);border-radius:8px;padding:10px 14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px}
+  .btn:hover{filter:brightness(.98)}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.green{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.red{background:var(--red);border-color:var(--red);color:#fff}
+  .btn.soft{background:var(--panel-soft)}
+  .btn.small{padding:7px 10px;min-height:32px;font-size:12px}
+  .btn.link{border:0;background:transparent;color:var(--blue);padding:4px;min-height:0}
+  .products{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:none}
+  .card:hover{box-shadow:var(--shadow)}
+  .product-card{display:grid;grid-template-rows:auto 1fr}
+  .product-main{display:flex;gap:14px;padding:14px;cursor:pointer}
+  .photo{width:88px;height:88px;border-radius:8px;background:linear-gradient(135deg,#eef2ff,#f8fafc);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--faint);font-weight:800;overflow:hidden;flex-shrink:0}
+  .photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .product-title{font-weight:800;font-size:15px;line-height:1.3}
+  .product-meta{font-size:12px;color:var(--muted);margin-top:4px}
+  .product-total{font-size:30px;font-weight:850;margin-top:12px;line-height:1}
+  .product-total small{font-size:12px;color:var(--faint);font-weight:600;margin-left:4px}
+  .stock-grid{display:grid;grid-template-columns:repeat(var(--size-count),minmax(0,1fr));gap:4px}
+  .stock-cell{border:1px solid var(--line);border-radius:6px;padding:6px 2px;text-align:center;background:var(--panel-soft);min-width:0}
+  .stock-cell b{display:block;font-size:14px;line-height:1.1}
+  .stock-cell span{display:block;font-size:9px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+  .stock-cell.ok{background:var(--green-soft);border-color:#bbf7d0;color:var(--green)}
+  .stock-cell.low{background:var(--amber-soft);border-color:#fde68a;color:var(--amber)}
+  .stock-cell.zero{background:var(--red-soft);border-color:#fecaca;color:var(--red)}
+  .product-stock{border-top:1px solid var(--line);padding:10px 12px 12px}
+  .risk{font-size:11px;margin-top:8px;font-weight:700}
+  .risk.red{color:var(--red)}
+  .risk.amber{color:var(--amber)}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}
+  .ops-grid{grid-template-columns:repeat(3,minmax(0,220px));margin-bottom:18px}
+  .op-card{min-height:126px;text-align:left;border-radius:8px;border:1px solid var(--line);background:#fff;padding:18px}
+  .op-card strong{display:block;font-size:18px;margin-bottom:6px}
+  .op-card span{color:var(--muted);font-size:12px}
+  .log-list{display:grid;gap:10px}
+  .log-day{margin-bottom:18px}
+  .log-day-head{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:700;margin:0 2px 8px}
+  .log-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .log-row:last-child{border-bottom:0}
+  .log-main{min-width:0}
+  .log-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .log-note{font-size:11px;color:var(--muted);margin-top:3px}
+  .qty{font-size:20px;font-weight:850;min-width:48px;text-align:right}
+  .qty.in{color:var(--green)}
+  .qty.out{color:var(--red)}
+  .qty.rev{color:var(--violet)}
+  .qty.adjust{color:var(--blue)}
+  .badge{font-size:11px;border-radius:999px;padding:3px 8px;border:1px solid var(--line);background:var(--panel-soft);color:var(--muted);white-space:nowrap}
+  .badge.blue{background:var(--blue-soft);border-color:#bfdbfe;color:var(--blue)}
+  .badge.red{background:var(--red-soft);border-color:#fecaca;color:var(--red)}
+  .badge.green{background:var(--green-soft);border-color:#bbf7d0;color:var(--green)}
+  .badge.amber{background:var(--amber-soft);border-color:#fde68a;color:var(--amber)}
+  .form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .field{display:grid;gap:6px;margin-bottom:13px}
+  .field label{font-size:11px;color:var(--muted);font-weight:700}
+  .size-input{background:var(--panel-soft);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .size-input label{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .size-input input{width:100%;text-align:center;border:1px solid var(--line-strong);border-radius:7px;padding:8px;font-weight:800;background:#fff}
+  .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}
+  .modal{width:min(560px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 28px 70px rgba(15,23,42,.28)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:16px 18px}
+  .modal-title{font-size:18px;font-weight:850}
+  .modal-body{padding:18px}
+  .modal-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .empty{padding:42px 20px;text-align:center;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px}
+  .settings{grid-template-columns:minmax(0,1fr);max-width:880px}
+  .setting-row{display:flex;justify-content:space-between;gap:16px;align-items:center;border-top:1px solid var(--line);padding:14px 0}
+  .setting-row:first-child{border-top:0;padding-top:0}
+  .setting-row strong{display:block;font-size:14px}
+  .setting-row p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:1200;border-radius:8px;color:#fff;padding:11px 16px;font-weight:800;box-shadow:var(--shadow);background:var(--green)}
+  .toast.err{background:var(--red)}
+  .hidden{display:none!important}
+  .mobile-nav{display:none}
+  @media(max-width:920px){
+    .app{display:block}
+    .sidebar{display:none}
+    .main{padding:16px 14px 92px;max-width:none}
+    .mobile-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .ops-grid{grid-template-columns:1fr}
+    .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .page-head{align-items:flex-start}
+    .mobile-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:900;padding:7px 4px 12px}
+    .mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:11px;padding:7px 2px;border-radius:8px}
+    .mobile-nav button.active{color:var(--blue);font-weight:800;background:var(--blue-soft)}
+  }
+  @media(max-width:560px){
+    .products{grid-template-columns:1fr}
+    .form-grid{grid-template-columns:1fr 1fr}
+    .setting-row{display:grid}
+    .modal-mask{align-items:flex-end;padding:0}
+    .modal{border-radius:16px 16px 0 0;width:100%;max-height:94vh}
   }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const{useState,useCallback,useRef,useEffect,useMemo,createContext,useContext}=React;
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<script>
+(() => {
+  "use strict";
 
-// ═══════════════════════════════════════════════
-// 安全改进：密码哈希工具
-// ═══════════════════════════════════════════════
-async function hashPassword(pw){
-  const enc=new TextEncoder().encode(pw+"_wms_salt_2024");
-  const buf=await crypto.subtle.digest("SHA-256",enc);
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-
-// ═══════════════════════════════════════════════
-// 配置 — 运行时注入，支持设置页动态修改
-// ═══════════════════════════════════════════════
-function getCloudConfig(){
-  const saved=loadLS("wms_cloud_v1",null);
-  const params=new URLSearchParams(window.location.hash.slice(1));
-  const metaBin=document.querySelector('meta[name="wms-bin-id"]')?.content;
-  const metaKey=document.querySelector('meta[name="wms-master-key"]')?.content;
-  return{
-    binId:saved?.binId||params.get("binId")||metaBin||"",
-    masterKey:saved?.masterKey||params.get("masterKey")||metaKey||""
+  const BULK = "__bulk";
+  const keys = {
+    products: "wms_opt_products_v1",
+    logs: "wms_opt_logs_v1",
+    sizes: "wms_opt_sizes_v1",
+    checks: "wms_opt_checks_v1",
+    threshold: "wms_opt_threshold_v1",
+    auth: "wms_opt_auth_v1"
   };
-}
-function getCdnConfig(){
-  const saved=loadLS("wms_cdn_v1",null);
-  const params=new URLSearchParams(window.location.hash.slice(1));
-  const metaName=document.querySelector('meta[name="wms-cdn-name"]')?.content;
-  const metaPreset=document.querySelector('meta[name="wms-cdn-preset"]')?.content;
-  return{
-    cloudName:saved?.cloudName||params.get("cdnName")||metaName||"",
-    uploadPreset:saved?.uploadPreset||params.get("cdnPreset")||metaPreset||""
+  const legacyKeys = {
+    products: "wms_shoes_v4",
+    productsV3: "wms_shoes_v3",
+    logs: "wms_logs_v4",
+    logsV3: "wms_logs_v3",
+    sizes: "wms_sizes_v1",
+    checks: "wms_checks_v1",
+    threshold: "wms_thresh_v2",
+    thresholdV1: "wms_thresh_v1"
   };
-}
-let CLOUD_CONFIG=getCloudConfig();
-let CLOUD_ON=!!CLOUD_CONFIG.binId&&!!CLOUD_CONFIG.masterKey;
-let CDN_CONFIG=getCdnConfig();
-let CDN_ON=!!CDN_CONFIG.cloudName&&!!CDN_CONFIG.uploadPreset;
+  const defaultSizes = ["36","37","38","39","40","41","42","43","44"];
+  const defaultProducts = [
+    {id:"p1",brand:"Nike",name:"Air Max",color:"黑色",price:0,image:""},
+    {id:"p2",brand:"Nike",name:"Air Force 1",color:"白色",price:0,image:""},
+    {id:"p3",brand:"Adidas",name:"Stan Smith",color:"白色",price:0,image:""},
+    {id:"p4",brand:"New Balance",name:"574",color:"灰色",price:0,image:""},
+    {id:"p5",brand:"Vans",name:"Old Skool",color:"黑白",price:0,image:""}
+  ];
+  const nav = [
+    ["overview","总览"],
+    ["ops","进出仓"],
+    ["logs","流水"],
+    ["products","款式"],
+    ["settings","设置"]
+  ];
+  const migratedFromLegacy = migrateLegacyData();
+  const state = {
+    page: "overview",
+    keyword: "",
+    sort: "risk",
+    logFilter: "all",
+    isAdmin: false,
+    products: load(keys.products, defaultProducts),
+    logs: load(keys.logs, []),
+    sizes: normalizeSizes(load(keys.sizes, defaultSizes)),
+    checks: load(keys.checks, []),
+    threshold: Number(load(keys.threshold, 3)) || 3,
+    auth: load(keys.auth, null),
+    modal: null
+  };
+  let pendingAdminAction = null;
+  let toastTimer = null;
 
-// ═══════════════════════════════════════════════
-// 常量与 localStorage Key
-// ═══════════════════════════════════════════════
-const DEFAULT_SIZES=[36,37,38,39,40,41,42,43,44];
-const KEY_SHOES="wms_shoes_v4",KEY_LOGS="wms_logs_v4",KEY_PW_HASH="wms_pwh_v2",KEY_THRESH="wms_thresh_v2",KEY_SIZES="wms_sizes_v1",KEY_CHECKS="wms_checks_v1",KEY_CLOUD="wms_cloud_v1",KEY_CDN="wms_cdn_v1",KEY_LAST_CHECK="wms_lastcheck_v1";
-// 旧版 key（用于自动迁移）
-const OLD_KEY_SHOES="wms_shoes_v3",OLD_KEY_LOGS="wms_logs_v3",OLD_KEY_THRESH="wms_thresh_v1";
-const DEFAULT_PW_HASH=null;
-const IDLE_TIMEOUT=15*60*1000; // 15分钟无操作自动登出
-const DEFAULT_SHOES=[
-  {id:"1",brand:"Nike",name:"Air Max",color:"黑色",photoUrl:"",price:0,category:"鞋"},
-  {id:"2",brand:"Nike",name:"Air Force 1",color:"白色",photoUrl:"",price:0,category:"鞋"},
-  {id:"3",brand:"Adidas",name:"Stan Smith",color:"白色",photoUrl:"",price:0,category:"鞋"},
-  {id:"4",brand:"Adidas",name:"Superstar",color:"黑白",photoUrl:"",price:0,category:"鞋"},
-  {id:"5",brand:"New Balance",name:"574",color:"灰色",photoUrl:"",price:0,category:"鞋"},
-  {id:"6",brand:"Vans",name:"Old Skool",color:"黑白",photoUrl:"",price:0,category:"鞋"},
-  {id:"7",brand:"Converse",name:"Chuck 70",color:"白色",photoUrl:"",price:0,category:"鞋"},
-];
+  const app = document.getElementById("app");
+  const modalRoot = document.getElementById("modal-root");
+  const toastRoot = document.getElementById("toast-root");
 
-// ═══════════════════════════════════════════════
-// 工具函数
-// ═══════════════════════════════════════════════
-function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
-function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function localDateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function fmtTime(iso){return new Date(iso).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});}
-function fmtDate(d){return new Date(d+"T12:00:00").toLocaleDateString("zh-CN",{month:"2-digit",day:"2-digit",weekday:"short"});}
-function loadLS(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch{return def;}}
-function saveLS(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
-
-// ═══════════════════════════════════════════════
-// 数据迁移：从旧版 v3 自动迁移到 v4
-// ═══════════════════════════════════════════════
-function migrateFromV3(){
-  // 如果新版已有数据，不迁移
-  if(localStorage.getItem(KEY_SHOES))return;
-  // 检查旧版是否有数据
-  const oldShoes=localStorage.getItem(OLD_KEY_SHOES);
-  const oldLogs=localStorage.getItem(OLD_KEY_LOGS);
-  if(!oldShoes&&!oldLogs)return;
-  // 迁移
-  console.log("[WMS] 检测到旧版数据，正在自动迁移...");
-  if(oldShoes)localStorage.setItem(KEY_SHOES,oldShoes);
-  if(oldLogs)localStorage.setItem(KEY_LOGS,oldLogs);
-  const oldThresh=localStorage.getItem(OLD_KEY_THRESH);
-  if(oldThresh)localStorage.setItem(KEY_THRESH,oldThresh);
-  console.log("[WMS] 迁移完成！旧数据已保留作为备份。");
-}
-migrateFromV3();
-
-// ═══════════════════════════════════════════════
-// 云同步（改进：乐观锁版本号）
-// ═══════════════════════════════════════════════
-let _cloudVersion=0;
-async function cloudFetch(){
-  const res=await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.binId}/latest`,{headers:{"X-Master-Key":CLOUD_CONFIG.masterKey}});
-  if(!res.ok)throw new Error("fetch failed");
-  const data=await res.json();
-  const rec=data.record||{};
-  _cloudVersion=rec._version||0;
-  return rec;
-}
-async function cloudSave(record){
-  // 乐观锁：带版本号，检测冲突
-  const newRec={...record,_version:_cloudVersion+1,_lastModified:new Date().toISOString()};
-  const res=await fetch(`https://api.jsonbin.io/v3/b/${CLOUD_CONFIG.binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":CLOUD_CONFIG.masterKey,"X-Bin-Versioning":"false"},body:JSON.stringify(newRec)});
-  if(!res.ok)throw new Error("save failed");
-  _cloudVersion=newRec._version;
-}
-
-// ═══════════════════════════════════════════════
-// 图片上传
-// ═══════════════════════════════════════════════
-async function uploadToCloudinary(file){
-  if(!CDN_ON)throw new Error("图片上传未配置");
-  const blob=await new Promise(resolve=>{const reader=new FileReader();reader.onload=e=>{const img=new Image();img.onload=()=>{const MAX=800;let w=img.width,h=img.height;if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;canvas.getContext("2d").drawImage(img,0,0,w,h);canvas.toBlob(b=>resolve(b),"image/jpeg",0.82);};img.src=e.target.result;};reader.readAsDataURL(file);});
-  const fd=new FormData();fd.append("file",blob);fd.append("upload_preset",CDN_CONFIG.uploadPreset);fd.append("folder","wms_shoes");
-  const res=await fetch(`https://api.cloudinary.com/v1_1/${CDN_CONFIG.cloudName}/image/upload`,{method:"POST",body:fd});
-  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||"上传失败");}
-  const data=await res.json();
-  return data.secure_url.replace("/upload/","/upload/c_fill,w_400,h_400,q_auto,f_auto/");
-}
-
-// ═══════════════════════════════════════════════
-// 库存计算（带缓存）
-// ═══════════════════════════════════════════════
-function buildInv(shoes,logs,sizes){
-  const inv={};
-  shoes.forEach(s=>{inv[s.id]={};sizes.forEach(sz=>{inv[s.id][sz]=0;});inv[s.id][0]=0;});
-  // 只遍历有效日志（非冲正的或冲正本身）
-  logs.forEach(l=>{
-    if(inv[l.shoeId]){
-      if(inv[l.shoeId][l.size]===undefined)inv[l.shoeId][l.size]=0;
-      if(l.type==="in")inv[l.shoeId][l.size]+=l.qty;
-      else if(l.type==="out")inv[l.shoeId][l.size]-=l.qty;
-      else if(l.type==="reverse-in")inv[l.shoeId][l.size]-=l.qty;
-      else if(l.type==="reverse-out")inv[l.shoeId][l.size]+=l.qty;
-      else if(l.type==="check-adjust")inv[l.shoeId][l.size]+=l.qty;
-    }
-  });
-  return inv;
-}
-
-// ═══════════════════════════════════════════════
-// 颜色系统
-// ═══════════════════════════════════════════════
-const C={bg:"#f5f5f0",surface:"#ffffff",border:"#e8e8e2",border2:"#d8d8d0",text:"#1a1a1a",text2:"#666660",text3:"#999990",green:"#16a34a",greenBg:"#f0fdf4",greenBd:"#bbf7d0",red:"#dc2626",redBg:"#fef2f2",redBd:"#fecaca",yellow:"#d97706",yellowBg:"#fffbeb",yellowBd:"#fde68a",accent:"#2563eb",accentBg:"#eff6ff",accentBd:"#bfdbfe",purple:"#7c3aed",purpleBg:"#f5f3ff",purpleBd:"#ddd6fe"};
-const inp={width:"100%",background:"#fff",border:`1px solid ${C.border2}`,borderRadius:10,padding:"11px 14px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"};
-
-function getSzColor(qty,thresh){return qty===0?C.red:qty<=thresh?C.yellow:C.green;}
-function getSzBg(qty,thresh){return qty===0?C.redBg:qty<=thresh?C.yellowBg:C.greenBg;}
-function getSzBd(qty,thresh){return qty===0?C.redBd:qty<=thresh?C.yellowBd:C.greenBd;}
-
-// ═══════════════════════════════════════════════
-// Error Boundary（错误边界）
-// ═══════════════════════════════════════════════
-class ErrorBoundary extends React.Component{
-  constructor(props){super(props);this.state={error:null};}
-  static getDerivedStateFromError(error){return{error};}
-  render(){
-    if(this.state.error)return React.createElement("div",{style:{padding:40,textAlign:"center"}},
-      React.createElement("div",{style:{fontSize:48,marginBottom:16}},"⚠"),
-      React.createElement("h2",{style:{marginBottom:8,color:C.red}},"系统出现异常"),
-      React.createElement("p",{style:{color:C.text3,marginBottom:16}},this.state.error.message),
-      React.createElement("button",{onClick:()=>{this.setState({error:null});},style:{background:C.accent,color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",cursor:"pointer",fontWeight:700}},"刷新重试")
-    );
-    return this.props.children;
-  }
-}
-
-// ═══════════════════════════════════════════════
-// Modal 滚动锁定 Hook
-// ═══════════════════════════════════════════════
-function useBodyScrollLock(isOpen){
-  useEffect(()=>{
-    if(isOpen){document.body.classList.add("modal-open");}
-    else{document.body.classList.remove("modal-open");}
-    return()=>document.body.classList.remove("modal-open");
-  },[isOpen]);
-}
-
-// ═══════════════════════════════════════════════
-// 子组件（提取到 App 外部，避免重复创建）
-// ═══════════════════════════════════════════════
-function SzCell({qty,sz,compact,thresh=3}){
-  const col=getSzColor(qty,thresh),bg=getSzBg(qty,thresh),bd=getSzBd(qty,thresh);
-  return(<div style={{background:bg,border:`1px solid ${bd}`,borderRadius:compact?6:8,padding:compact?"4px 2px":"7px 2px",textAlign:"center"}} role="cell" aria-label={`${sz}码 库存${qty}双`}><div style={{fontSize:compact?7:8,color:C.text3,marginBottom:compact?1:3}}>{sz}</div><div style={{fontSize:compact?11:14,fontWeight:800,color:col,lineHeight:1}}>{qty}</div></div>);
-}
-
-function SyncBadge({syncStatus,lastSync,pullCloud}){
-  const base={fontSize:10,display:"flex",alignItems:"center",gap:4};
-  if(syncStatus==="offline")return<div style={{...base,color:C.text3}} role="status"><span aria-hidden="true">💾</span><span>本地模式</span></div>;
-  if(syncStatus==="syncing")return<div style={{...base,color:C.accent}} role="status"><span className="spin" aria-hidden="true">↻</span><span>同步中</span></div>;
-  if(syncStatus==="ok")return<div style={{...base,color:C.green,cursor:"pointer"}} onClick={pullCloud} role="status" tabIndex={0} aria-label="已同步，点击刷新"><span aria-hidden="true">✓</span><span>已同步 {lastSync}</span></div>;
-  if(syncStatus==="error")return<div style={{...base,color:C.red,cursor:"pointer"}} onClick={pullCloud} role="status" tabIndex={0} aria-label="同步失败，点击重试"><span aria-hidden="true">⚠</span><span>同步失败 点击重试</span></div>;
-  return null;
-}
-
-function PhotoBox({shoe,size:boxSize=110,rounded=false,isAdmin,uploadState,onUpload,onRemove,onZoom}){
-  const ref=useRef();const url=shoe?.photoUrl||"";const sid=shoe?.id;const st=uploadState?.[sid];const r=rounded?12:0;
-  return(
-    <div style={{width:boxSize,height:boxSize,flexShrink:0,position:"relative",background:"#f8f8f5",borderRadius:r,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-      {url?(
-        <>
-          <img src={url} alt={`${shoe?.brand} ${shoe?.name}`} loading="lazy" style={{width:boxSize,height:boxSize,objectFit:"cover",display:"block",borderRadius:r}} onError={e=>{e.target.style.display="none";e.target.nextSibling&&(e.target.nextSibling.style.display="flex");}}/>
-          <div style={{width:boxSize,height:boxSize,display:"none",alignItems:"center",justifyContent:"center",position:"absolute",top:0,left:0,background:"#f8f8f5",fontSize:Math.round(boxSize*0.32),color:C.text3}}>👟</div>
-          <button onClick={e=>{e.stopPropagation();onZoom?.(url);}} aria-label="查看大图" style={{position:"absolute",bottom:6,right:6,width:24,height:24,borderRadius:7,background:"rgba(0,0,0,0.55)",border:"1.5px solid rgba(255,255,255,0.7)",color:"#fff",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>⤢</button>
-          {isAdmin&&<button onClick={e=>{e.stopPropagation();onRemove?.(sid);}} aria-label="删除图片" style={{position:"absolute",top:6,right:6,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,0.9)",border:"2px solid #fff",color:"#fff",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,lineHeight:1}}>×</button>}
-        </>
-      ):st==="uploading"?(
-        <div style={{width:boxSize,height:boxSize,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,background:"#f0f4ff"}}><span className="spin" style={{fontSize:22,color:C.accent}} aria-hidden="true">↻</span><span style={{fontSize:10,color:C.accent}}>上传中…</span></div>
-      ):isAdmin?(
-        <div className="photo-upload" onClick={e=>{e.stopPropagation();ref.current?.click();}} role="button" tabIndex={0} aria-label="上传图片" style={{width:boxSize,height:boxSize,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:5,border:`1.5px dashed ${st==="error"?C.red:C.border2}`,background:st==="error"?"#fff5f5":"#fafaf8"}}>
-          <span style={{fontSize:Math.round(boxSize*0.27),color:st==="error"?C.red:C.text3}} aria-hidden="true">{st==="error"?"⚠":"📷"}</span>
-          <span style={{fontSize:10,color:st==="error"?C.red:C.text3,textAlign:"center",padding:"0 4px"}}>{st==="error"?"上传失败":"点击上传"}</span>
-        </div>
-      ):(
-        <div style={{width:boxSize,height:boxSize,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5}} aria-label="无图片"><span style={{fontSize:Math.round(boxSize*0.32),color:C.text3}} aria-hidden="true">👟</span></div>
-      )}
-      {isAdmin&&<input ref={ref} type="file" accept="image/*" style={{display:"none"}} aria-hidden="true" onChange={e=>{if(e.target.files[0])onUpload?.(sid,e.target.files[0]);e.target.value="";}}/>}
-    </div>
-  );
-}
-
-// ─── 分页 Hook ───
-function usePagination(items,perPage=20){
-  const[page,setPage]=useState(1);
-  const totalPages=Math.ceil(items.length/perPage);
-  const paged=items.slice((page-1)*perPage,page*perPage);
-  useEffect(()=>{if(page>totalPages&&totalPages>0)setPage(totalPages);},[page,totalPages]);
-  return{page,setPage,totalPages,paged};
-}
-
-function Pagination({page,totalPages,setPage}){
-  if(totalPages<=1)return null;
-  return(
-    <div className="pagination" role="navigation" aria-label="翻页">
-      <button disabled={page<=1} onClick={()=>setPage(p=>p-1)} aria-label="上一页">‹</button>
-      {Array.from({length:Math.min(totalPages,7)},(_,i)=>{
-        let p;
-        if(totalPages<=7)p=i+1;
-        else if(page<=4)p=i+1;
-        else if(page>=totalPages-3)p=totalPages-6+i;
-        else p=page-3+i;
-        return<button key={p} className={p===page?"active":""} onClick={()=>setPage(p)}>{p}</button>;
-      })}
-      <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} aria-label="下一页">›</button>
-    </div>
-  );
-}
-
-// ─── 简易趋势图组件 ───
-function TrendChart({data,width="100%",height=180,barColor=C.accent}){
-  if(!data||!data.length)return<div style={{textAlign:"center",color:C.text3,padding:30,fontSize:12}}>暂无数据</div>;
-  const max=Math.max(...data.map(d=>d.value),1);
-  return(
-    <div style={{width,height,display:"flex",alignItems:"flex-end",gap:2,padding:"0 4px"}} role="img" aria-label="趋势图">
-      {data.map((d,i)=>(
-        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-          {d.value>0&&<div style={{fontSize:11,fontWeight:700,color:barColor,lineHeight:1}}>{d.value}</div>}
-          <div className="chart-bar" style={{width:"100%",maxWidth:40,height:`${Math.max((d.value/max)*120,d.value>0?4:0)}px`,background:barColor,borderRadius:"4px 4px 0 0"}}/>
-          <div style={{fontSize:8,color:C.text3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{d.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════
-// 主应用
-// ═══════════════════════════════════════════════
-function App(){
-  // ─── 核心状态 ───
-  const[shoes,setShoes]=useState(()=>loadLS(KEY_SHOES,DEFAULT_SHOES));
-  const[logs,setLogs]=useState(()=>loadLS(KEY_LOGS,[]));
-  const[sizes,setSizes]=useState(()=>loadLS(KEY_SIZES,DEFAULT_SIZES));
-  const[checks,setChecks]=useState(()=>loadLS(KEY_CHECKS,[]));
-  const[page,setPage]=useState("home");
-  const[isMobile,setIsMobile]=useState(window.innerWidth<=768);
-  const[lowThresh,setLowThresh]=useState(()=>loadLS(KEY_THRESH,3));
-
-  // ─── 安全状态（改进：哈希密码，isAdmin 不存 localStorage） ───
-  const[pwHash,setPwHash]=useState(()=>loadLS(KEY_PW_HASH,null));
-  const[isAdmin,setIsAdmin]=useState(false); // 不再持久化，刷新需重新登录
-  const[pwModal,setPwModal]=useState(null);
-  const[pwInput,setPwInput]=useState("");
-  const[pwError,setPwError]=useState(false);
-  const[setupMode,setSetupMode]=useState(false);
-
-  // ─── UI 状态 ───
-  const[batchModal,setBatchModal]=useState(null);
-  const[batchForm,setBatchForm]=useState({});
-  const[shoeModal,setShoeModal]=useState(null);
-  const[shoeForm,setShoeForm]=useState({brand:"",name:"",color:"",price:""});
-  const[detailShoe,setDetailShoe]=useState(null);
-  const[checkModal,setCheckModal]=useState(null);
-  const[checkForm,setCheckForm]=useState({});
-  const[checkReason,setCheckReason]=useState("");
-  const[syncStatus,setSyncStatus]=useState(CLOUD_ON?"idle":"offline");
-  const[lastSync,setLastSync]=useState(null);
-  const[zoomPhoto,setZoomPhoto]=useState(null);
-  const[uploadState,setUploadState]=useState({});
-  const[toast,setToast]=useState(null);
-  const[keyword,setKeyword]=useState("");
-  const[sortBy,setSortBy]=useState("default");
-  const[flashIds,setFlashIds]=useState({});
-  const saveTimer=useRef(null);
-  const idleTimer=useRef(null);
-
-  // ─── 模态框滚动锁定 ───
-  useBodyScrollLock(!!batchModal||!!detailShoe||!!shoeModal||!!pwModal||!!zoomPhoto||!!checkModal);
-
-  useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<=768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
-
-  // ─── Idle 自动登出 ───
-  useEffect(()=>{
-    if(!isAdmin)return;
-    function resetIdle(){clearTimeout(idleTimer.current);idleTimer.current=setTimeout(()=>{setIsAdmin(false);showToast("已自动退出（长时间未操作）");},IDLE_TIMEOUT);}
-    const events=["mousedown","keydown","touchstart","scroll"];
-    events.forEach(e=>window.addEventListener(e,resetIdle,{passive:true}));
-    resetIdle();
-    return()=>{clearTimeout(idleTimer.current);events.forEach(e=>window.removeEventListener(e,resetIdle));};
-  },[isAdmin]);
-
-  function showToast(msg,type="ok"){setToast({msg,type});setTimeout(()=>setToast(null),2600);}
-
-  // ─── 安全改进：密码验证 ───
-  function requireAdmin(action){
-    if(isAdmin){action();return;}
-    if(!pwHash){
-      // 首次使用，需要设置密码
-      setSetupMode(true);setPwInput("");setPwError(false);setPwModal({action});
-    }else{
-      setPwInput("");setPwError(false);setSetupMode(false);setPwModal({action});
-    }
-  }
-  async function submitPassword(){
-    if(setupMode){
-      // 设置新密码
-      if(pwInput.length<4){setPwError(true);setPwInput("");return;}
-      const h=await hashPassword(pwInput);
-      setPwHash(h);saveLS(KEY_PW_HASH,h);
-      setIsAdmin(true);setSetupMode(false);
-      const act=pwModal?.action;setPwModal(null);setPwInput("");setPwError(false);
-      showToast("✓ 管理密码已设置");
-      if(act)act();
-    }else{
-      const h=await hashPassword(pwInput);
-      if(h===pwHash){
-        setIsAdmin(true);
-        const act=pwModal?.action;setPwModal(null);setPwInput("");setPwError(false);
-        if(act)act();
-      }else{setPwError(true);setPwInput("");}
-    }
-  }
-  function logout(){setIsAdmin(false);showToast("已退出管理员");}
-
-  // ─── 数据持久化 ───
-  const persistLocal=useCallback((s,l)=>{saveLS(KEY_SHOES,s);saveLS(KEY_LOGS,l);},[]);
-  const scheduleCloud=useCallback((s,l)=>{
-    if(!CLOUD_ON)return;
-    clearTimeout(saveTimer.current);setSyncStatus("syncing");
-    saveTimer.current=setTimeout(async()=>{
-      try{await cloudSave({shoes:s,logs:l});setSyncStatus("ok");setLastSync(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));}
-      catch{setSyncStatus("error");}
-    },1200);
-  },[]);
-
-  const pullCloud=useCallback(async(quiet=false)=>{
-    if(!CLOUD_ON)return;
-    if(!quiet)setSyncStatus("syncing");
+  function load(key, fallback){
     try{
-      const rec=await cloudFetch();
-      if(rec&&rec.shoes&&rec.shoes.length>0){
-        const ms=rec.shoes.map(s=>({photoUrl:"",...s}));
-        setShoes(ms);saveLS(KEY_SHOES,ms);
-        setLogs(rec.logs||[]);saveLS(KEY_LOGS,rec.logs||[]);
-      }else{
-        const ls=loadLS(KEY_SHOES,DEFAULT_SHOES),ll=loadLS(KEY_LOGS,[]);
-        await cloudSave({shoes:ls,logs:ll});setShoes(ls);setLogs(ll);
-      }
-      setSyncStatus("ok");setLastSync(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));
-    }catch{setSyncStatus("error");}
-  },[]);
-
-  useEffect(()=>{if(!CLOUD_ON)return;pullCloud();const id=setInterval(()=>pullCloud(true),60000);const onFocus=()=>pullCloud(true);window.addEventListener("focus",onFocus);return()=>{clearInterval(id);window.removeEventListener("focus",onFocus);};},[pullCloud]);
-  useEffect(()=>{const h=e=>{if(e.key==="Escape"){setZoomPhoto(null);setDetailShoe(null);setBatchModal(null);setShoeModal(null);setCheckModal(null);}};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[]);
-
-  function updateData(newShoes,newLogs,flashShoeId){
-    if(newShoes!==null)setShoes(newShoes);
-    if(newLogs!==null)setLogs(newLogs);
-    const s=newShoes!==null?newShoes:shoes;
-    const l=newLogs!==null?newLogs:logs;
-    persistLocal(s,l);scheduleCloud(s,l);
-    if(flashShoeId){setFlashIds(f=>({...f,[flashShoeId]:Date.now()}));setTimeout(()=>setFlashIds(f=>{const n={...f};delete n[flashShoeId];return n;}),800);}
-  }
-
-  // ─── useMemo 优化：库存等重计算 ───
-  const inv=useMemo(()=>buildInv(shoes,logs,sizes),[shoes,logs,sizes]);
-  const today=todayStr();
-  const shoeById=useMemo(()=>{const m={};shoes.forEach(s=>{m[s.id]=s;});return m;},[shoes]);
-  const shoeTotal=useCallback((id)=>sizes.reduce((a,sz)=>a+(inv[id]?.[sz]||0),0)+(inv[id]?.[0]||0),[inv,sizes]);
-
-  const todayLogs=useMemo(()=>logs.filter(l=>l.date===today),[logs,today]);
-  const todayIn=useMemo(()=>todayLogs.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const todayOutGross=useMemo(()=>todayLogs.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const todayReverseOut=useMemo(()=>todayLogs.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const todayOut=useMemo(()=>todayOutGross-todayReverseOut,[todayOutGross,todayReverseOut]);
-  const todayOutOnline=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="网店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const todayOutStore=useMemo(()=>todayLogs.filter(l=>l.type==="out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0)-todayLogs.filter(l=>l.type==="reverse-out"&&l.channel==="门店").reduce((a,b)=>a+b.qty,0),[todayLogs]);
-  const totalStock=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id),0),[shoes,shoeTotal]);
-  function getCategory(shoe){return(shoe.name||"").includes("袜子")?"袜子":"鞋";}
-  const categoryStock=useMemo(()=>{const m={};shoes.forEach(sh=>{const cat=getCategory(sh);if(!m[cat])m[cat]=0;m[cat]+=shoeTotal(sh.id);});return m;},[shoes,shoeTotal]);
-  const soldOutStyles=useMemo(()=>shoes.filter(sh=>{if((inv[sh.id]?.[0]||0)>0)return false;return sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0);}).length,[shoes,inv,sizes]);
-  const lowStockStyles=useMemo(()=>shoes.filter(sh=>{if((inv[sh.id]?.[0]||0)>0)return false;return sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;});}).length,[shoes,inv,sizes,lowThresh]);
-
-  const brandMap=useMemo(()=>{const m={};shoes.forEach(sh=>{if(!m[sh.brand])m[sh.brand]={total:0,shoes:[]};m[sh.brand].total+=shoeTotal(sh.id);m[sh.brand].shoes.push(sh);});return m;},[shoes,shoeTotal]);
-  const sizeTotal=useMemo(()=>{const st={};sizes.forEach(sz=>{st[sz]=shoes.reduce((a,sh)=>a+(inv[sh.id]?.[sz]||0),0);});return st;},[shoes,inv,sizes]);
-
-  const logsByDate=useMemo(()=>{const m={};logs.forEach(l=>{if(!m[l.date])m[l.date]=[];m[l.date].push(l);});return m;},[logs]);
-  const sortedDates=useMemo(()=>Object.keys(logsByDate).sort((a,b)=>b.localeCompare(a)),[logsByDate]);
-
-  const filteredShoes=useMemo(()=>shoes.filter(s=>`${s.brand}${s.name}${s.color}`.toLowerCase().includes(keyword.toLowerCase())),[shoes,keyword]);
-  const sortedShoes=useMemo(()=>[...filteredShoes].sort((a,b)=>{
-    if(sortBy==="stock-desc")return shoeTotal(b.id)-shoeTotal(a.id);
-    if(sortBy==="stock-asc")return shoeTotal(a.id)-shoeTotal(b.id);
-    if(sortBy==="brand")return a.brand.localeCompare(b.brand);
-    if(sortBy==="soldout"){const sa=sizes.filter(sz=>(inv[a.id]?.[sz]||0)===0).length;const sb=sizes.filter(sz=>(inv[b.id]?.[sz]||0)===0).length;return sb-sa;}
-    return 0;
-  }),[filteredShoes,sortBy,shoeTotal,inv,sizes]);
-
-  // ─── KPI 指标 ───
-  const stockoutRate=useMemo(()=>shoes.length>0?Math.round(soldOutStyles/shoes.length*100):0,[soldOutStyles,shoes]);
-  const totalInvValue=useMemo(()=>shoes.reduce((s,sh)=>s+shoeTotal(sh.id)*(sh.price||0),0),[shoes,shoeTotal]);
-  const turnoverRate=useMemo(()=>{
-    // 近30天出仓总量 / 平均库存
-    const d30=new Date();d30.setDate(d30.getDate()-30);const d30s=d30.toISOString().slice(0,10);
-    const outQty=logs.filter(l=>l.type==="out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0)-logs.filter(l=>l.type==="reverse-out"&&l.date>=d30s).reduce((a,b)=>a+b.qty,0);
-    return totalStock>0?(outQty/totalStock).toFixed(1):"0.0";
-  },[logs,totalStock]);
-  const lastCheckDate=useMemo(()=>checks.length>0?checks[0].date:null,[checks]);
-  const daysSinceCheck=useMemo(()=>{
-    if(!lastCheckDate)return null;
-    const diff=Math.floor((new Date()-new Date(lastCheckDate+"T12:00:00"))/(1000*60*60*24));
-    return diff;
-  },[lastCheckDate]);
-
-  // ─── 报表数据 ───
-  const last7Days=useMemo(()=>{
-    const result=[];
-    for(let i=6;i>=0;i--){
-      const d=new Date();d.setDate(d.getDate()-i);
-      const ds=localDateStr(d);
-      const dl=logsByDate[ds]||[];
-      result.push({
-        date:ds,
-        label:`${d.getMonth()+1}/${d.getDate()}`,
-        in:dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0),
-        out:dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0)-dl.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0),
-      });
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch{
+      return fallback;
     }
-    return result;
-  },[logsByDate]);
-
-  // ─── 导出 ───
-  function exportJSON(){
-    const data={exportTime:new Date().toISOString(),version:2,shoes,logs,sizes,checks};
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`仓库备份_${todayStr()}.json`;a.click();URL.revokeObjectURL(url);showToast("✓ 备份已下载");
   }
-  function exportCSV(){
-    const rows=[["品牌","款式","颜色","采购价",...sizes.map(s=>s+"码"),"总计","库存价值"]];
-    shoes.forEach(sh=>{
-      const tot=shoeTotal(sh.id);
-      const row=[sh.brand,sh.name,sh.color,sh.price||0,...sizes.map(sz=>inv[sh.id]?.[sz]||0),tot,tot*(sh.price||0)];
-      rows.push(row);
+  function save(key, value){
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  function migrateLegacyData(){
+    const hasNewData = localStorage.getItem(keys.products) || localStorage.getItem(keys.logs);
+    if(hasNewData) return false;
+    const legacyProducts = load(legacyKeys.products, null) || load(legacyKeys.productsV3, null);
+    const legacyLogs = load(legacyKeys.logs, null) || load(legacyKeys.logsV3, null);
+    if(!Array.isArray(legacyProducts) && !Array.isArray(legacyLogs)) return false;
+
+    const products = Array.isArray(legacyProducts) ? legacyProducts.map(item => ({
+      id: String(item.id || uid()),
+      brand: String(item.brand || ""),
+      name: String(item.name || ""),
+      color: String(item.color || ""),
+      price: Number(item.price) || 0,
+      image: String(item.photoUrl || item.image || "")
+    })) : defaultProducts;
+
+    const sourceLogs = Array.isArray(legacyLogs) ? legacyLogs : [];
+    const originalById = Object.fromEntries(sourceLogs.map(log => [log.id, log]));
+    const logs = sourceLogs.map(log => {
+      const original = log.reversedId ? originalById[log.reversedId] : null;
+      const type = log.type === "check-adjust" ? "adjust" : String(log.type || "in");
+      return {
+        id: String(log.id || uid()),
+        type,
+        productId: String(log.productId || log.shoeId || ""),
+        size: Number(log.size) === 0 ? BULK : String(log.size),
+        qty: Number(log.qty) || 0,
+        channel: String(log.channel || original?.channel || ""),
+        note: String(log.note || ""),
+        date: String(log.date || todayKey()),
+        time: String(log.time || new Date().toISOString()),
+        reversedId: log.reversedId ? String(log.reversedId) : undefined
+      };
+    }).filter(log => log.productId);
+
+    save(keys.products, products);
+    save(keys.logs, logs);
+    save(keys.sizes, normalizeSizes(load(legacyKeys.sizes, defaultSizes)));
+    save(keys.checks, Array.isArray(load(legacyKeys.checks, [])) ? load(legacyKeys.checks, []) : []);
+    save(keys.threshold, Number(load(legacyKeys.threshold, load(legacyKeys.thresholdV1, 3))) || 3);
+    return true;
+  }
+  function saveData(){
+    save(keys.products, state.products);
+    save(keys.logs, state.logs);
+    save(keys.sizes, state.sizes);
+    save(keys.checks, state.checks);
+    save(keys.threshold, state.threshold);
+  }
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function todayKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  function timeLabel(iso){
+    return new Date(iso).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
+  }
+  function dateLabel(date){
+    return new Date(date + "T12:00:00").toLocaleDateString("zh-CN",{month:"2-digit",day:"2-digit",weekday:"short"});
+  }
+  function money(n){
+    return n > 0 ? `¥${Math.round(n).toLocaleString("zh-CN")}` : "—";
+  }
+  function esc(value){
+    return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  }
+  function csvCell(value){
+    const s = String(value ?? "");
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  function normalizeSizes(list){
+    return [...new Set((Array.isArray(list) ? list : defaultSizes).map(v => String(v).trim()).filter(Boolean))]
+      .sort((a,b) => Number(a) - Number(b));
+  }
+  function productById(){
+    return Object.fromEntries(state.products.map(p => [p.id, p]));
+  }
+  function buildInventory(){
+    const inv = {};
+    state.products.forEach(p => {
+      inv[p.id] = {[BULK]:0};
+      state.sizes.forEach(size => inv[p.id][size] = 0);
     });
-    const csv="\uFEFF"+rows.map(r=>r.join(",")).join("\n");
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`库存表_${todayStr()}.csv`;a.click();URL.revokeObjectURL(url);showToast("✓ CSV已下载，可用Excel打开");
+    state.logs.slice().reverse().forEach(log => {
+      if(!inv[log.productId]) return;
+      const size = String(log.size || BULK);
+      if(inv[log.productId][size] === undefined) inv[log.productId][size] = 0;
+      const qty = Number(log.qty) || 0;
+      if(log.type === "in") inv[log.productId][size] += qty;
+      if(log.type === "out") inv[log.productId][size] -= qty;
+      if(log.type === "reverse-in") inv[log.productId][size] -= qty;
+      if(log.type === "reverse-out") inv[log.productId][size] += qty;
+      if(log.type === "adjust") inv[log.productId][size] += qty;
+    });
+    return inv;
   }
-  function importData(file){
-    if(!file)return;const reader=new FileReader();
-    reader.onload=e=>{
-      try{
-        const data=JSON.parse(e.target.result);
-        if(!data.shoes||!data.logs)throw new Error("格式错误");
-        if(!confirm(`确认导入？将覆盖现有数据。\n包含 ${data.shoes.length} 款鞋，${data.logs.length} 条记录。`))return;
-        updateData(data.shoes,data.logs);
-        if(data.sizes){setSizes(data.sizes);saveLS(KEY_SIZES,data.sizes);}
-        if(data.checks){setChecks(data.checks);saveLS(KEY_CHECKS,data.checks);}
-        showToast(`✓ 导入成功：${data.shoes.length}款 / ${data.logs.length}条`);
-      }catch{showToast("❌ 文件格式错误","err");}
-    };reader.readAsText(file);
+  function totalOf(inv, id){
+    const stock = inv[id] || {};
+    return state.sizes.reduce((sum, size) => sum + (stock[size] || 0), stock[BULK] || 0);
   }
-
-  // ─── 图片操作 ───
-  async function handlePhotoUpload(shoeId,file){
-    if(!file)return;
-    setUploadState(s=>({...s,[shoeId]:"uploading"}));
-    try{
-      const url=await uploadToCloudinary(file);
-      const updated=shoes.map(s=>s.id===shoeId?{...s,photoUrl:url}:s);
-      updateData(updated,null);
-      setUploadState(s=>({...s,[shoeId]:"done"}));showToast("✓ 图片上传成功");
-      setTimeout(()=>setUploadState(s=>{const n={...s};delete n[shoeId];return n;}),2000);
-    }catch(err){
-      setUploadState(s=>({...s,[shoeId]:"error"}));showToast("❌ 上传失败："+err.message,"err");
-      setTimeout(()=>setUploadState(s=>{const n={...s};delete n[shoeId];return n;}),3000);
-    }
+  function statusFor(qty){
+    if(qty <= 0) return "zero";
+    if(qty <= state.threshold) return "low";
+    return "ok";
   }
-  function removePhoto(shoeId){updateData(shoes.map(s=>s.id===shoeId?{...s,photoUrl:""}:s),null);}
-
-  // ─── 入仓/出仓 ───
-  function openBatch(type,shoeId){const f={note:"",_smartTotal:""};sizes.forEach(sz=>{f[sz]="";});setBatchForm(f);setBatchModal({type,shoeId:shoeId||shoes[0]?.id});}
-  function smartFill(total){
-    if(!total||total<=0)return;
-    const perSize=Math.floor(total/sizes.length);
-    const remainder=total%sizes.length;
-    const f={...batchForm,_smartTotal:String(total)};
-    sizes.forEach((sz,i)=>{f[sz]=String(perSize+(i<remainder?1:0));});
-    setBatchForm(f);
+  function stockGrid(inv, id){
+    return `<div class="stock-grid" style="--size-count:${state.sizes.length}">${state.sizes.map(size => {
+      const qty = inv[id]?.[size] || 0;
+      return `<div class="stock-cell ${statusFor(qty)}"><span>${esc(size)}</span><b>${qty}</b></div>`;
+    }).join("")}</div>`;
   }
-  function submitBatch(){
-    if(batchModal.type==="out"){
-      if(!batchForm.channel){alert("请选择出仓渠道（网店 / 门店）");return;}
-    }
-    let newEntries=[];
-    if(batchForm._totalMode){
-      const qty=parseInt(batchForm._totalQty)||0;
-      if(!qty){return;}
-      if(batchModal.type==="out"){
-        const cur=inv[batchModal.shoeId]?.[0]||0;
-        if(qty>cur){alert(`${shoeById[batchModal.shoeId]?.brand} ${shoeById[batchModal.shoeId]?.name} 库存不足！当前仅剩 ${cur} 双`);return;}
+  function reversible(log){
+    return (log.type === "in" || log.type === "out") && !state.logs.some(item => item.reversedId === log.id);
+  }
+  function stats(inv){
+    const today = todayKey();
+    const todayLogs = state.logs.filter(log => log.date === today);
+    const sum = (type, channel) => todayLogs
+      .filter(log => log.type === type && (!channel || log.channel === channel))
+      .reduce((n, log) => n + Number(log.qty || 0), 0);
+    const totalStock = state.products.reduce((n, p) => n + totalOf(inv, p.id), 0);
+    const soldout = state.products.filter(p => state.sizes.some(size => (inv[p.id]?.[size] || 0) <= 0)).length;
+    const low = state.products.filter(p => state.sizes.some(size => {
+      const qty = inv[p.id]?.[size] || 0;
+      return qty > 0 && qty <= state.threshold;
+    })).length;
+    const value = state.products.reduce((n, p) => n + totalOf(inv, p.id) * (Number(p.price) || 0), 0);
+    return {
+      totalStock,
+      todayIn: sum("in") - sum("reverse-in"),
+      todayOut: sum("out") - sum("reverse-out"),
+      onlineOut: sum("out","网店") - sum("reverse-out","网店"),
+      storeOut: sum("out","门店") - sum("reverse-out","门店"),
+      soldout,
+      low,
+      value
+    };
+  }
+  function filteredProducts(inv){
+    const kw = state.keyword.trim().toLowerCase();
+    const list = state.products.filter(p => `${p.brand}${p.name}${p.color}`.toLowerCase().includes(kw));
+    return list.sort((a,b) => {
+      if(state.sort === "stock-desc") return totalOf(inv,b.id) - totalOf(inv,a.id);
+      if(state.sort === "stock-asc") return totalOf(inv,a.id) - totalOf(inv,b.id);
+      if(state.sort === "brand") return a.brand.localeCompare(b.brand, "zh-CN");
+      if(state.sort === "risk"){
+        const ar = state.sizes.filter(size => (inv[a.id]?.[size] || 0) <= state.threshold).length;
+        const br = state.sizes.filter(size => (inv[b.id]?.[size] || 0) <= state.threshold).length;
+        return br - ar || totalOf(inv,a.id) - totalOf(inv,b.id);
       }
-      newEntries=[{id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:0,qty,note:batchForm.note||"",channel:batchModal.type==="out"?batchForm.channel:"",date:today,time:new Date().toISOString()}];
+      return 0;
+    });
+  }
+  function productPhoto(product){
+    return `<div class="photo">${product.image ? `<img src="${esc(product.image)}" alt="${esc(product.brand)} ${esc(product.name)}">` : esc(product.brand.slice(0,1) || "W")}</div>`;
+  }
+  function productCard(product, inv, manage=false){
+    const total = totalOf(inv, product.id);
+    const zero = state.sizes.filter(size => (inv[product.id]?.[size] || 0) <= 0);
+    const low = state.sizes.filter(size => {
+      const qty = inv[product.id]?.[size] || 0;
+      return qty > 0 && qty <= state.threshold;
+    });
+    return `
+      <article class="card product-card" data-card="${esc(product.id)}">
+        <div class="product-main">
+          ${productPhoto(product)}
+          <div style="min-width:0;flex:1">
+            <div class="product-title">${esc(product.brand)} ${esc(product.name)}</div>
+            <div class="product-meta">${esc(product.color || "未设置颜色")}${product.price ? ` · ${money(product.price)}` : ""}</div>
+            <div class="product-total">${total}<small>双</small></div>
+          </div>
+        </div>
+        <div class="product-stock">
+          ${stockGrid(inv, product.id)}
+          ${zero.length ? `<div class="risk red">断码：${zero.map(esc).join(" / ")}</div>` : ""}
+          ${!zero.length && low.length ? `<div class="risk amber">低库存：${low.map(esc).join(" / ")}</div>` : ""}
+          ${state.isAdmin ? `<div class="row-actions">
+            <button class="btn small green" data-action="open-stock" data-mode="in" data-id="${esc(product.id)}">入仓</button>
+            <button class="btn small red" data-action="open-stock" data-mode="out" data-id="${esc(product.id)}">出仓</button>
+            <button class="btn small" data-action="open-stock" data-mode="check" data-id="${esc(product.id)}">盘点</button>
+            ${manage ? `<button class="btn small soft" data-action="edit-product" data-id="${esc(product.id)}">编辑</button>
+            <button class="btn small soft" data-action="pick-image" data-id="${esc(product.id)}">图片</button>
+            <input class="hidden" type="file" accept="image/*" data-image-input="${esc(product.id)}">` : ""}
+          </div>` : ""}
+        </div>
+      </article>
+    `;
+  }
+  function renderShell(){
+    const inv = buildInventory();
+    app.innerHTML = `
+      <div class="app">
+        <aside class="sidebar">
+          <div class="brand"><small>Warehouse</small><strong>仓库管理</strong><div style="margin-top:10px">${adminBadge()}</div></div>
+          <nav class="nav">${nav.map(([key,label]) => `<button data-page="${key}" class="${state.page === key ? "active" : ""}">${label}</button>`).join("")}</nav>
+          <div class="sidebar-foot">${state.isAdmin
+            ? `<button class="btn soft" style="width:100%" data-action="logout">退出管理员</button>`
+            : `<button class="btn primary" style="width:100%" data-action="login">登录管理</button>`}
+          </div>
+        </aside>
+        <main class="main">
+          <div class="mobile-bar"><div><div style="font-size:10px;color:var(--faint);letter-spacing:2px;text-transform:uppercase">Warehouse</div><div style="font-weight:850;font-size:20px">仓库管理</div></div>${adminBadge()}</div>
+          ${renderPage(inv)}
+        </main>
+        <nav class="mobile-nav">${nav.map(([key,label]) => `<button data-page="${key}" class="${state.page === key ? "active" : ""}">${label}</button>`).join("")}</nav>
+      </div>`;
+    renderModal(inv);
+  }
+  function adminBadge(){
+    return state.isAdmin ? `<span class="badge green">管理员已登录</span>` : `<span class="badge">查看模式</span>`;
+  }
+  function renderPage(inv){
+    if(state.page === "overview") return renderOverview(inv);
+    if(state.page === "ops") return renderOps(inv);
+    if(state.page === "logs") return renderLogs(inv);
+    if(state.page === "products") return renderProducts(inv);
+    return renderSettings(inv);
+  }
+  function pageHead(title, subtitle, actions=""){
+    return `<div class="page-head"><div><div class="page-title">${esc(title)}</div><div class="page-subtitle">${subtitle}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap">${actions}</div></div>`;
+  }
+  function renderOverview(inv){
+    const s = stats(inv);
+    const products = filteredProducts(inv);
+    return `
+      ${pageHead("库存总览", `${new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}`, state.isAdmin ? `<button class="btn green" data-action="open-stock" data-mode="in">快速入仓</button>` : "")}
+      <section class="grid stats">
+        ${statCard("总库存", s.totalStock, "双")}
+        ${statCard("今日入仓", s.todayIn, "净入仓")}
+        ${statCard("今日出仓", s.todayOut, "净出仓")}
+        ${statCard("网店出仓", s.onlineOut, "今日")}
+        ${statCard("门店出仓", s.storeOut, "今日")}
+        ${statCard("库存价值", money(s.value), "按采购价")}
+      </section>
+      ${riskBanner(s)}
+      ${productToolbar()}
+      <section class="grid products">${products.map(p => productCard(p, inv)).join("") || `<div class="empty">没有匹配的款式</div>`}</section>
+    `;
+  }
+  function statCard(label, value, hint){
+    return `<div class="stat"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div><div class="hint">${esc(hint)}</div></div>`;
+  }
+  function riskBanner(s){
+    if(!s.soldout && !s.low) return "";
+    return `<div class="panel" style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px;background:${s.soldout ? "var(--red-soft)" : "var(--amber-soft)"}">
+      <div><strong>${s.soldout ? "存在断码款式" : "存在低库存款式"}</strong><div style="color:var(--muted);font-size:12px;margin-top:4px">断码 ${s.soldout} 款，低库存 ${s.low} 款。建议先处理高周转尺码。</div></div>
+      <button class="btn small" data-sort-risk>按风险排序</button>
+    </div>`;
+  }
+  function productToolbar(){
+    return `<div class="toolbar">
+      <label class="search"><span>⌕</span><input id="keyword" value="${esc(state.keyword)}" placeholder="搜索品牌 / 款式 / 颜色"></label>
+      <select class="select" id="sort">
+        ${[["risk","风险优先"],["stock-desc","库存多到少"],["stock-asc","库存少到多"],["brand","品牌排序"]].map(([v,l]) => `<option value="${v}" ${state.sort===v?"selected":""}>${l}</option>`).join("")}
+      </select>
+    </div>`;
+  }
+  function renderOps(inv){
+    const todayLogs = state.logs.filter(log => log.date === todayKey());
+    return `
+      ${pageHead("进出仓", `今日 ${todayLogs.length} 笔记录`)}
+      <section class="grid ops-grid">
+        <button class="op-card" data-action="open-stock" data-mode="in"><strong>入仓</strong><span>按尺码批量录入补货</span></button>
+        <button class="op-card" data-action="open-stock" data-mode="out"><strong>出仓</strong><span>必选渠道，自动校验库存</span></button>
+        <button class="op-card" data-action="pick-check"><strong>盘点</strong><span>按实际库存生成差异调整</span></button>
+      </section>
+      <h3 style="font-size:13px;letter-spacing:1px;color:var(--muted)">今日流水</h3>
+      ${todayLogs.length ? `<section class="card">${todayLogs.map(log => logRow(log, inv)).join("")}</section>` : `<div class="empty">今日暂无流水</div>`}
+    `;
+  }
+  function renderLogs(inv){
+    const filtered = state.logFilter === "all" ? state.logs : state.logs.filter(log => log.channel === state.logFilter);
+    const grouped = filtered.reduce((map, log) => {
+      (map[log.date] ||= []).push(log);
+      return map;
+    }, {});
+    const dates = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+    return `
+      ${pageHead("流水记录", `共 ${state.logs.length} 条记录`, `<select class="select" id="logFilter"><option value="all">全部渠道</option><option value="网店" ${state.logFilter==="网店"?"selected":""}>网店</option><option value="门店" ${state.logFilter==="门店"?"selected":""}>门店</option></select>`)}
+      ${dates.length ? dates.map(date => {
+        const rows = grouped[date];
+        const inQty = rows.filter(l => l.type === "in").reduce((n,l)=>n+l.qty,0) - rows.filter(l => l.type === "reverse-in").reduce((n,l)=>n+l.qty,0);
+        const outQty = rows.filter(l => l.type === "out").reduce((n,l)=>n+l.qty,0) - rows.filter(l => l.type === "reverse-out").reduce((n,l)=>n+l.qty,0);
+        return `<section class="log-day"><div class="log-day-head"><span>${dateLabel(date)}</span><span>入 ${inQty} · 出 ${outQty}</span></div><div class="card">${rows.map(log => logRow(log, inv)).join("")}</div></section>`;
+      }).join("") : `<div class="empty">暂无流水</div>`}
+    `;
+  }
+  function logRow(log){
+    const products = productById();
+    const p = products[log.productId];
+    const cls = log.type.startsWith("reverse") ? "rev" : log.type === "out" ? "out" : log.type === "adjust" ? "adjust" : "in";
+    const sign = log.type === "out" || log.type === "reverse-in" || (log.type === "adjust" && log.qty < 0) ? "-" : "+";
+    const typeText = {"in":"入仓","out":"出仓","reverse-in":"冲正入仓","reverse-out":"冲正出仓","adjust":"盘点调整"}[log.type] || log.type;
+    return `<div class="log-row">
+      <div class="log-main">
+        <div class="log-title">${esc(typeText)} · ${p ? `${esc(p.brand)} ${esc(p.name)}` : "已删除款式"} · ${log.size === BULK ? "总数" : esc(log.size + "码")} ${log.channel ? `<span class="badge blue">${esc(log.channel)}</span>` : ""}</div>
+        <div class="log-note">${esc(log.date)} ${esc(timeLabel(log.time))}${log.note ? ` · ${esc(log.note)}` : ""}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="qty ${cls}">${sign}${Math.abs(log.qty)}</div>
+        ${state.isAdmin && reversible(log) ? `<button class="btn small soft" data-action="reverse-log" data-id="${esc(log.id)}">冲正</button>` : ""}
+      </div>
+    </div>`;
+  }
+  function renderProducts(inv){
+    return `
+      ${pageHead("款式管理", `共 ${state.products.length} 款`, state.isAdmin ? `<button class="btn primary" data-action="add-product">新增款式</button>` : "")}
+      ${state.isAdmin ? "" : `<div class="panel" style="margin-bottom:14px;color:var(--muted)">当前为查看模式。登录管理员后可编辑款式和上传本地图片。</div>`}
+      <section class="grid products">${state.products.map(p => productCard(p, inv, true)).join("")}</section>
+    `;
+  }
+  function renderSettings(inv){
+    const s = stats(inv);
+    return `
+      ${pageHead("系统设置", "安全、尺码、备份与迁移建议")}
+      <section class="grid settings">
+        <div class="panel">
+          <div class="setting-row"><div><strong>管理员密码</strong><p>本地版只做轻量防误操作，不能替代后端鉴权。生产环境应移到服务端。</p></div>${state.isAdmin ? `<button class="btn soft" data-action="logout">退出</button>` : `<button class="btn primary" data-action="login">登录 / 设置</button>`}</div>
+          <div class="setting-row"><div><strong>低库存阈值</strong><p>当前小于等于 ${state.threshold} 双时标记为低库存。</p></div><div style="display:flex;gap:8px"><input class="input" id="threshold" type="number" min="1" max="99" value="${state.threshold}" style="width:86px"><button class="btn primary" data-action="save-threshold">保存</button></div></div>
+          <div class="setting-row"><div><strong>尺码列表</strong><p>支持半码。修复了旧版使用 parseInt 导致 42.5 被记成 42 的问题。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><input class="input" id="sizes" value="${esc(state.sizes.join(", "))}" style="min-width:280px"><button class="btn primary" data-action="save-sizes">保存</button></div></div>
+        </div>
+        <div class="panel">
+          <div class="setting-row"><div><strong>导出 JSON 备份</strong><p>包含款式、流水、尺码、盘点记录，可完整恢复。</p></div><button class="btn green" data-action="export-json">导出 JSON</button></div>
+          <div class="setting-row"><div><strong>导出 CSV 库存表</strong><p>已做逗号、引号、换行转义，Excel 打开更稳。</p></div><button class="btn green" data-action="export-csv">导出 CSV</button></div>
+          <div class="setting-row"><div><strong>导入恢复</strong><p>导入前会覆盖当前本地数据，请先导出备份。</p></div><button class="btn soft" data-action="pick-import">导入 JSON</button><input class="hidden" type="file" accept=".json,application/json" id="importFile"></div>
+        </div>
+        <div class="panel" style="border-color:#fecaca;background:var(--red-soft)">
+          <strong>重要安全提醒</strong>
+          <p style="margin:8px 0 0;color:var(--muted);line-height:1.7">不要把 JSONBin Master Key、Cloudinary unsigned preset 等生产密钥放在 HTML 或 meta 标签里。你贴出的原型已经暴露了可读写云端数据的凭据，建议立即轮换密钥，并把同步、上传、鉴权放到后端 API。</p>
+        </div>
+        <div class="panel">
+          <div class="setting-row"><div><strong>当前数据</strong><p>${state.products.length} 款 · ${state.logs.length} 条流水 · ${state.checks.length} 次盘点 · 库存价值 ${money(s.value)}</p></div></div>
+        </div>
+      </section>
+    `;
+  }
+  function renderModal(inv){
+    if(!state.modal){
+      modalRoot.innerHTML = "";
+      return;
+    }
+    if(state.modal.type === "auth") return renderAuthModal();
+    if(state.modal.type === "product") return renderProductModal();
+    if(state.modal.type === "stock") return renderStockModal(inv);
+    if(state.modal.type === "pick-check") return renderPickCheck(inv);
+    if(state.modal.type === "detail") return renderDetail(inv);
+  }
+  function modalFrame(title, body, foot=""){
+    modalRoot.innerHTML = `<div class="modal-mask" data-action="close-modal"><div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><div class="modal-head"><div class="modal-title">${title}</div><button class="btn small soft" data-action="close-modal">关闭</button></div><div class="modal-body">${body}${foot}</div></div></div>`;
+  }
+  function renderAuthModal(){
+    const first = !state.auth;
+    modalFrame(first ? "设置管理员密码" : "管理员登录", `
+      <div class="field"><label>${first ? "新密码" : "密码"}</label><input class="input" id="authPassword" type="password" autocomplete="current-password" autofocus placeholder="${first ? "至少 6 位" : "输入管理员密码"}"></div>
+      ${first ? `<div class="field"><label>确认密码</label><input class="input" id="authPassword2" type="password" autocomplete="new-password"></div>` : ""}
+      <p style="color:var(--muted);font-size:12px;line-height:1.7">本地密码使用 PBKDF2 派生后保存，但前端仍无法提供真正安全权限。正式使用请接入后端登录。</p>
+      <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-auth">${first ? "设置并进入" : "登录"}</button></div>
+    `);
+  }
+  function renderProductModal(){
+    const product = state.modal.id ? state.products.find(p => p.id === state.modal.id) : null;
+    modalFrame(product ? "编辑款式" : "新增款式", `
+      <form id="productForm">
+        <div class="field"><label>品牌</label><input class="input" name="brand" required value="${esc(product?.brand || "")}"></div>
+        <div class="field"><label>款式名称</label><input class="input" name="name" required value="${esc(product?.name || "")}"></div>
+        <div class="field"><label>颜色</label><input class="input" name="color" value="${esc(product?.color || "")}"></div>
+        <div class="field"><label>采购单价</label><input class="input" name="price" type="number" min="0" step="0.01" value="${esc(product?.price || "")}"></div>
+        <div class="modal-foot"><button type="button" class="btn soft" data-action="close-modal">取消</button><button class="btn primary" type="submit">保存</button></div>
+      </form>
+    `);
+  }
+  function renderStockModal(inv){
+    const mode = state.modal.mode;
+    const product = state.products.find(p => p.id === state.modal.id) || state.products[0];
+    if(!product){
+      modalFrame("暂无款式", `<div class="empty">请先新增款式</div>`);
+      return;
+    }
+    if(mode === "check"){
+      const fields = state.sizes.map(size => {
+        const qty = inv[product.id]?.[size] || 0;
+        return `<div class="size-input"><label><span>${esc(size)} 码</span><span>系统 ${qty}</span></label><input type="number" min="0" value="${qty}" data-check-size="${esc(size)}"></div>`;
+      }).join("");
+      modalFrame("库存盘点", stockProductSelect(product, "check") + `
+        <div class="form-grid">${fields}</div>
+        <div class="field" style="margin-top:13px"><label>差异原因</label><select class="select" id="checkReason"><option value="">未注明</option><option>录入错误</option><option>正常损耗</option><option>退货未登记</option><option>调拨差异</option><option>其他</option></select></div>
+        <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-check">确认盘点</button></div>
+      `);
+      return;
+    }
+    const isIn = mode === "in";
+    const fields = state.sizes.map(size => {
+      const qty = inv[product.id]?.[size] || 0;
+      return `<div class="size-input"><label><span>${esc(size)} 码</span><span>现有 ${qty}</span></label><input type="number" min="0" placeholder="0" data-size="${esc(size)}"></div>`;
+    }).join("");
+    modalFrame(isIn ? "入仓登记" : "出仓登记", stockProductSelect(product, mode) + `
+      <div class="form-grid">${fields}</div>
+      ${isIn ? "" : `<div class="field" style="margin-top:13px"><label>出仓渠道</label><select class="select" id="channel"><option value="">请选择</option><option>网店</option><option>门店</option></select></div>`}
+      <div class="field" style="margin-top:13px"><label>备注</label><input class="input" id="note" placeholder="${isIn ? "如：供应商补货" : "如：订单号或门店名称"}"></div>
+      <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn ${isIn ? "green" : "red"}" data-action="submit-stock">${isIn ? "确认入仓" : "确认出仓"}</button></div>
+    `);
+  }
+  function stockProductSelect(product, mode){
+    return `<div class="field"><label>款式</label><select class="select" id="stockProduct">${state.products.map(p => `<option value="${esc(p.id)}" ${p.id===product.id?"selected":""}>${esc(p.brand)} ${esc(p.name)} ${esc(p.color || "")}</option>`).join("")}</select></div>`;
+  }
+  function renderPickCheck(inv){
+    modalFrame("选择盘点款式", `<div class="log-list">${state.products.map(p => `<button class="btn soft" style="justify-content:space-between" data-action="open-stock" data-mode="check" data-id="${esc(p.id)}"><span>${esc(p.brand)} ${esc(p.name)}</span><strong>${totalOf(inv,p.id)} 双</strong></button>`).join("")}</div>`);
+  }
+  function renderDetail(inv){
+    const product = state.products.find(p => p.id === state.modal.id);
+    if(!product) return closeModal();
+    const logs = state.logs.filter(log => log.productId === product.id).slice(0, 12);
+    modalFrame(`${esc(product.brand)} ${esc(product.name)}`, `
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px">${productPhoto(product)}<div><div class="product-meta">${esc(product.color || "未设置颜色")}</div><div class="product-total">${totalOf(inv, product.id)}<small>双</small></div></div></div>
+      ${stockGrid(inv, product.id)}
+      ${state.isAdmin ? `<div class="row-actions" style="margin:14px 0"><button class="btn small green" data-action="open-stock" data-mode="in" data-id="${esc(product.id)}">入仓</button><button class="btn small red" data-action="open-stock" data-mode="out" data-id="${esc(product.id)}">出仓</button><button class="btn small" data-action="open-stock" data-mode="check" data-id="${esc(product.id)}">盘点</button></div>` : ""}
+      <h3 style="font-size:13px;color:var(--muted);margin-top:18px">最近流水</h3>
+      ${logs.length ? `<div class="card">${logs.map(log => logRow(log)).join("")}</div>` : `<div class="empty">暂无流水</div>`}
+    `);
+  }
+
+  async function pbkdf2(password, salt, iterations=120000){
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({name:"PBKDF2", salt: enc.encode(salt), iterations, hash:"SHA-256"}, key, 256);
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+  function requireAdmin(action){
+    if(state.isAdmin){
+      action();
+      return;
+    }
+    pendingAdminAction = action;
+    state.modal = {type:"auth"};
+    renderShell();
+  }
+  async function submitAuth(){
+    const pass = document.getElementById("authPassword")?.value || "";
+    if(!state.auth){
+      const pass2 = document.getElementById("authPassword2")?.value || "";
+      if(pass.length < 6) return showToast("密码至少 6 位", true);
+      if(pass !== pass2) return showToast("两次密码不一致", true);
+      const salt = uid();
+      const hash = await pbkdf2(pass, salt);
+      state.auth = {salt, hash, iterations:120000};
+      save(keys.auth, state.auth);
+      state.isAdmin = true;
     }else{
-      const entries=Object.entries(batchForm).filter(([k,v])=>!isNaN(parseInt(k))&&parseInt(v)>0);
-      if(!entries.length)return;
-      if(batchModal.type==="out"){
-        for(const[sz,v]of entries){
-          const cur=inv[batchModal.shoeId]?.[parseInt(sz)]||0;
-          if(parseInt(v)>cur){alert(`${shoeById[batchModal.shoeId]?.brand} ${shoeById[batchModal.shoeId]?.name} ${sz}码库存不足！当前仅剩 ${cur} 双`);return;}
-        }
-      }
-      newEntries=entries.map(([sz,v])=>({id:genId(),type:batchModal.type,shoeId:batchModal.shoeId,size:parseInt(sz),qty:parseInt(v),note:batchForm.note||"",channel:batchModal.type==="out"?batchForm.channel:"",date:today,time:new Date().toISOString()}));
+      const hash = await pbkdf2(pass, state.auth.salt, state.auth.iterations || 120000);
+      if(hash !== state.auth.hash) return showToast("密码错误", true);
+      state.isAdmin = true;
     }
-    const newLogs=[...newEntries,...logs];
-    updateData(null,newLogs,batchModal.shoeId);
-    setBatchModal(null);setBatchForm({});
-    showToast(`✓ ${batchModal.type==="in"?"入仓":"出仓"}成功`);
+    const action = pendingAdminAction;
+    pendingAdminAction = null;
+    closeModal(false);
+    showToast("已进入管理员模式");
+    if(action) action();
   }
-
-  // ─── 冲正（替代删除） ───
-  function reverseLog(log){
-    if(!confirm(`确认冲正这条记录？\n${log.type==="in"?"入仓":"出仓"} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size}码 ×${log.qty}`))return;
-    const reverseType=log.type==="in"?"reverse-in":"reverse-out";
-    const newLog={id:genId(),type:reverseType,shoeId:log.shoeId,size:log.size,qty:log.qty,note:`冲正: ${log.note||"无"}`,date:today,time:new Date().toISOString(),reversedId:log.id};
-    updateData(null,[newLog,...logs],log.shoeId);
-    showToast("✓ 已冲正");
+  function closeModal(shouldRender=true){
+    state.modal = null;
+    if(shouldRender) renderShell();
   }
-
-  // ─── 款式管理 ───
-  function submitShoe(){
-    if(!shoeForm.brand||!shoeForm.name)return;
-    const priceVal=parseFloat(shoeForm.price)||0;
-    if(shoeModal==="add"){updateData([...shoes,{...shoeForm,price:priceVal,id:genId(),photoUrl:""}],null);}
-    else{updateData(shoes.map(s=>s.id===shoeModal.id?{...s,...shoeForm,price:priceVal}:s),null);}
-    setShoeModal(null);setShoeForm({brand:"",name:"",color:"",price:""});showToast("✓ 保存成功");
+  function showToast(message, isError=false){
+    clearTimeout(toastTimer);
+    toastRoot.innerHTML = `<div class="toast ${isError ? "err" : ""}">${esc(message)}</div>`;
+    toastTimer = setTimeout(() => toastRoot.innerHTML = "", 2600);
   }
-
-  // ─── 删除流水 ───
-  function deleteLog(log){
-    const typeLabel=log.type==="in"?"入仓":log.type==="out"?"出仓":log.type?.startsWith("reverse")?"冲正":"盘点调整";
-    if(!confirm(`确认删除这条记录？\n${typeLabel} ${shoeById[log.shoeId]?.brand||""} ${shoeById[log.shoeId]?.name||""} ${log.size===0?"无码":log.size+"码"} ×${log.qty}\n⚠️ 删除后库存将同步更新，此操作不可撤销`))return;
-    const newLogs=logs.filter(l=>l.id!==log.id);
-    updateData(null,newLogs,log.shoeId);
-    showToast("✓ 已删除");
+  function openStock(mode, id){
+    requireAdmin(() => {
+      state.modal = {type:"stock", mode, id: id || state.products[0]?.id};
+      renderShell();
+    });
   }
-  function deleteShoe(id){if(!confirm("确认删除该款鞋子？相关流水记录将保留。"))return;updateData(shoes.filter(s=>s.id!==id),null);}
-
-  // ─── 盘点 ───
-  function openCheck(shoeId){
-    const f={};sizes.forEach(sz=>{f[sz]=String(inv[shoeId]?.[sz]||0);});
-    setCheckForm(f);setCheckReason("");setCheckModal({shoeId});
+  function submitStock(){
+    const productId = document.getElementById("stockProduct")?.value;
+    const mode = state.modal.mode;
+    const channel = document.getElementById("channel")?.value || "";
+    const note = document.getElementById("note")?.value.trim() || "";
+    const inv = buildInventory();
+    if(mode === "out" && !channel) return showToast("请选择出仓渠道", true);
+    const entries = [...document.querySelectorAll("[data-size]")]
+      .map(input => ({size: input.dataset.size, qty: Number(input.value) || 0}))
+      .filter(item => item.qty > 0);
+    if(!entries.length) return showToast("请输入数量", true);
+    if(mode === "out"){
+      const bad = entries.find(item => item.qty > (inv[productId]?.[item.size] || 0));
+      if(bad) return showToast(`${bad.size} 码库存不足`, true);
+    }
+    const now = new Date().toISOString();
+    const date = todayKey();
+    const newLogs = entries.map(item => ({id:uid(), type:mode, productId, size:item.size, qty:item.qty, channel: mode === "out" ? channel : "", note, date, time:now}));
+    state.logs = [...newLogs, ...state.logs];
+    saveData();
+    closeModal();
+    showToast(mode === "in" ? "入仓成功" : "出仓成功");
   }
   function submitCheck(){
-    if(!checkModal)return;
-    const sid=checkModal.shoeId;
-    const adjustLogs=[];const diffs=[];
-    const reasonText=checkReason||"未注明";
-    sizes.forEach(sz=>{
-      const actual=parseInt(checkForm[sz])||0;
-      const system=inv[sid]?.[sz]||0;
-      const diff=actual-system;
-      if(diff!==0){
-        adjustLogs.push({id:genId(),type:"check-adjust",shoeId:sid,size:sz,qty:diff,note:`盘点调整[${reasonText}](系统${system}→实际${actual})`,date:today,time:new Date().toISOString()});
-        diffs.push(`${sz}码: ${system}→${actual} (${diff>0?"+":""}${diff})`);
+    const productId = document.getElementById("stockProduct")?.value;
+    const reason = document.getElementById("checkReason")?.value || "未注明";
+    const inv = buildInventory();
+    const now = new Date().toISOString();
+    const date = todayKey();
+    const adjustLogs = [];
+    const diffs = [];
+    document.querySelectorAll("[data-check-size]").forEach(input => {
+      const size = input.dataset.checkSize;
+      const actual = Math.max(0, Number(input.value) || 0);
+      const system = inv[productId]?.[size] || 0;
+      const diff = actual - system;
+      if(diff !== 0){
+        adjustLogs.push({id:uid(), type:"adjust", productId, size, qty:diff, channel:"", note:`盘点：${reason}（系统 ${system} -> 实际 ${actual}）`, date, time:now});
+        diffs.push(`${size}: ${system}->${actual}`);
       }
     });
-    if(!adjustLogs.length){showToast("库存无差异");setCheckModal(null);return;}
-    const checkRecord={id:genId(),date:today,time:new Date().toISOString(),shoeId:sid,reason:reasonText,diffs};
-    setChecks(prev=>{const nc=[checkRecord,...prev];saveLS(KEY_CHECKS,nc);return nc;});
-    saveLS(KEY_LAST_CHECK,today);
-    updateData(null,[...adjustLogs,...logs],sid);
-    setCheckModal(null);showToast(`✓ 盘点完成，${adjustLogs.length} 码有差异`);
+    if(!adjustLogs.length){
+      closeModal();
+      return showToast("库存无差异");
+    }
+    state.logs = [...adjustLogs, ...state.logs];
+    state.checks = [{id:uid(), productId, date, time:now, reason, diffs}, ...state.checks];
+    saveData();
+    closeModal();
+    showToast(`盘点完成，${adjustLogs.length} 个尺码有差异`);
   }
-
-  // ═══════════════════════════════════════════════
-  // 页面组件
-  // ═══════════════════════════════════════════════
-  const nav=[{key:"home",icon:"▦",label:"总览"},{key:"ops",icon:"⇅",label:"进出仓"},{key:"logs",icon:"≡",label:"流水"},{key:"report",icon:"◉",label:"报表"},{key:"shoes",icon:"◈",label:"款式管理"},{key:"settings",icon:"⚙",label:"设置"}];
-  const modalWrap=(mobile)=>({position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:mobile?"flex-end":"center",justifyContent:"center",zIndex:100});
-  const modalBox=(mobile)=>({background:C.surface,borderRadius:mobile?"20px 20px 0 0":20,width:"100%",maxWidth:520,margin:mobile?"0":"auto",padding:22,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 -8px 40px rgba(0,0,0,0.12)"});
-
-  // ─── 品牌折叠组件 ───
-  function BrandSection(){
-    const[expanded,setExpanded]=useState({});
-    return(
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 320px",gap:14,marginBottom:24,alignItems:"start"}}>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}} role="region" aria-label="品牌库存">
-          <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase"}}>品牌库存</div>
-            <div style={{fontSize:10,color:C.text3}}>点击品牌展开款式</div>
-          </div>
-          {Object.entries(brandMap).map(([brand,info],bi)=>{
-            const isOpen=!!expanded[brand];
-            const brandSoldOut=info.shoes.some(sh=>sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0));
-            const brandLow=info.shoes.some(sh=>sizes.some(sz=>{const q=inv[sh.id]?.[sz]||0;return q>0&&q<=lowThresh;}));
-            return(
-              <div key={brand} style={{borderBottom:bi<Object.keys(brandMap).length-1?`1px solid ${C.border}`:"none"}}>
-                <button onClick={()=>setExpanded(e=>({...e,[brand]:!e[brand]}))} aria-expanded={isOpen} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 18px",cursor:"pointer",background:isOpen?"#f9f9f7":C.surface,transition:"background 0.15s",width:"100%",border:"none",textAlign:"left"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>{brand}</span>
-                    <span style={{fontSize:11,color:C.text3}}>{info.shoes.length}款</span>
-                    {brandSoldOut&&<span style={{fontSize:9,color:C.red,background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:4,padding:"1px 5px",fontWeight:600}}>断码</span>}
-                    {brandLow&&!brandSoldOut&&<span style={{fontSize:9,color:C.yellow,background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:4,padding:"1px 5px",fontWeight:600}}>低库</span>}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:20,fontWeight:800,color:C.text}}>{info.total}<span style={{fontSize:10,color:C.text3,marginLeft:2}}>双</span></span>
-                    <span style={{fontSize:12,color:C.text3,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}} aria-hidden="true">▾</span>
-                  </div>
-                </button>
-                {isOpen&&(
-                  <div style={{background:"#f9f9f7",borderTop:`1px solid ${C.border}`,padding:"8px 14px 12px"}}>
-                    {info.shoes.map(sh=>{
-                      const tot=shoeTotal(sh.id);const hasSoldOut=sizes.some(sz=>(inv[sh.id]?.[sz]||0)===0);
-                      return(
-                        <div key={sh.id} onClick={()=>setDetailShoe(sh)} style={{display:"flex",alignItems:"center",gap:8,background:C.surface,borderRadius:9,padding:"7px 10px",cursor:"pointer",border:`1px solid ${hasSoldOut?"#fca5a5":C.border}`,marginBottom:5}} role="button" tabIndex={0}>
-                          {sh.photoUrl?<img src={sh.photoUrl} alt="" loading="lazy" style={{width:32,height:32,objectFit:"cover",borderRadius:6,flexShrink:0}}/>:<div style={{width:32,height:32,borderRadius:6,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}} aria-hidden="true">👟</div>}
-                          <div style={{flex:1,minWidth:0}}><div style={{fontSize:12,fontWeight:600,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sh.name}</div><div style={{fontSize:10,color:C.text3}}>{sh.color}</div></div>
-                          <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:14,fontWeight:800,color:hasSoldOut?C.red:C.text}}>{tot}</div></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}} role="region" aria-label="全款尺码汇总">
-          <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:14}}>全款尺码汇总</div>
-          <div style={{display:"grid",gridTemplateColumns:`repeat(${sizes.length},1fr)`,gap:4,marginBottom:10}}>{sizes.map(sz=><SzCell key={sz} qty={sizeTotal[sz]} sz={sz} thresh={lowThresh}/>)}</div>
-          <div style={{display:"grid",gridTemplateColumns:`repeat(${sizes.length},1fr)`,gap:4,marginBottom:16}}>{sizes.map(sz=>{const max=Math.max(...Object.values(sizeTotal),1);const pct=Math.round((sizeTotal[sz]/max)*100);const col=getSzColor(sizeTotal[sz],lowThresh);return(<div key={sz} style={{height:28,background:"#f0f0ec",borderRadius:4,overflow:"hidden",display:"flex",alignItems:"flex-end"}}><div className="chart-bar" style={{width:"100%",height:`${pct}%`,background:col,borderRadius:4,minHeight:sizeTotal[sz]>0?3:0}}/></div>);})}</div>
-          {sizes.filter(sz=>sizeTotal[sz]===0).length>0&&<div style={{fontSize:10,color:C.red,fontWeight:500,marginBottom:6}}>⚠ 全断码：{sizes.filter(sz=>sizeTotal[sz]===0).join(" / ")} 码</div>}
-          {sizes.filter(sz=>sizeTotal[sz]>0&&sizeTotal[sz]<=lowThresh*2).length>0&&<div style={{fontSize:10,color:C.yellow,fontWeight:500}}>▲ 全款低库：{sizes.filter(sz=>sizeTotal[sz]>0&&sizeTotal[sz]<=lowThresh*2).join(" / ")} 码</div>}
-        </div>
-      </div>
-    );
+  function reverseLog(id){
+    requireAdmin(() => {
+      const log = state.logs.find(item => item.id === id);
+      if(!log || !reversible(log)) return showToast("该流水不可重复冲正", true);
+      const reverse = {
+        id: uid(),
+        type: log.type === "in" ? "reverse-in" : "reverse-out",
+        productId: log.productId,
+        size: log.size,
+        qty: log.qty,
+        channel: log.channel || "",
+        note: `冲正：${log.note || "无备注"}`,
+        date: todayKey(),
+        time: new Date().toISOString(),
+        reversedId: log.id
+      };
+      state.logs = [reverse, ...state.logs];
+      saveData();
+      renderShell();
+      showToast("已生成冲正流水");
+    });
   }
-
-  // ─── 总览页 ───
-  function PageHome(){
-    return(<div>
-      <div className="page-header">
-        <div><div className="page-title">库存总览</div><div className="page-subtitle">{new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div></div>
-        {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>openBatch("in",null))} style={{background:C.green,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 快速入仓</button>}
-      </div>
-      <div className="stat-grid" role="region" aria-label="统计数据">
-        {[{label:"总库存",value:totalStock,color:C.text,bg:"#fff",bd:C.border,unit:"双"},{label:"今日入仓",value:todayIn,color:C.green,bg:C.greenBg,bd:C.greenBd,unit:"双"},{label:"今日出仓",value:todayOut,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🛒 网店出仓",value:todayOutOnline,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"🏪 门店出仓",value:todayOutStore,color:C.red,bg:C.redBg,bd:C.redBd,unit:"双"},{label:"断码款式",value:soldOutStyles,color:C.red,bg:C.redBg,bd:C.redBd,unit:"款"},{label:"低库款式",value:lowStockStyles,color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,unit:"款"}].map(s=>(
-          <div key={s.label} className="stat-card" style={{background:s.bg,border:`1px solid ${s.bd}`}} role="status" aria-label={`${s.label} ${s.value} ${s.unit}`}>
-            <div className="stat-label">{s.label}</div><div className="stat-value" style={{color:s.color}}>{s.value}</div><div className="stat-unit">{s.unit}</div>
-          </div>
-        ))}
-      </div>
-      {/* 盘点提醒 */}
-      {(daysSinceCheck===null||daysSinceCheck>30)&&isAdmin&&(
-        <div style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:12,color:C.yellow,fontWeight:600}}>{daysSinceCheck===null?"📋 尚未进行过盘点，建议尽快安排":"📋 距上次盘点已超过30天，建议重新盘点"}</div>
-          <button onClick={()=>setPage("report")} style={{background:C.yellow,border:"none",borderRadius:8,padding:"6px 14px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>查看报表</button>
-        </div>
-      )}
-      <BrandSection/>
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-        <div style={{flex:1,minWidth:180,position:"relative"}}>
-          <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:C.text3,pointerEvents:"none"}} aria-hidden="true">🔍</span>
-          <input value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="搜索品牌 / 款式 / 颜色…" aria-label="搜索款式" style={{width:"100%",background:"#fff",border:`1px solid ${C.border2}`,borderRadius:10,padding:"9px 12px 9px 34px",fontSize:13,outline:"none",color:C.text}}/>
-          {keyword&&<button onClick={()=>setKeyword("")} aria-label="清除搜索" style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:C.text3,fontSize:16,lineHeight:1}}>×</button>}
-        </div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}} role="group" aria-label="排序方式">
-          {[{v:"default",label:"默认"},{v:"stock-desc",label:"库存↓"},{v:"stock-asc",label:"库存↑"},{v:"brand",label:"品牌"},{v:"soldout",label:"断码优先"}].map(s=>(
-            <button key={s.v} onClick={()=>setSortBy(s.v)} aria-pressed={sortBy===s.v} style={{background:sortBy===s.v?C.accent:"#fff",color:sortBy===s.v?"#fff":C.text2,border:`1px solid ${sortBy===s.v?C.accent:C.border2}`,borderRadius:8,padding:"7px 12px",fontSize:11,cursor:"pointer",fontWeight:sortBy===s.v?700:400,transition:"all 0.15s"}}>{s.label}</button>
-          ))}
-        </div>
-      </div>
-      <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>款式库存 · {sortedShoes.length}{filteredShoes.length<shoes.length?` / ${shoes.length}`:""}款</div>
-      <div className="shoe-grid">
-        {sortedShoes.map(shoe=>{
-          const total=shoeTotal(shoe.id);const soldOut=sizes.filter(sz=>(inv[shoe.id]?.[sz]||0)===0);const low=sizes.filter(sz=>{const q=inv[shoe.id]?.[sz]||0;return q>0&&q<=lowThresh;});const isFlashing=!!flashIds[shoe.id];
-          return(
-            <div key={shoe.id} className={`card-hover${isFlashing?" qty-flash":""}`} onClick={()=>setDetailShoe(shoe)} style={{background:C.surface,border:`1px solid ${soldOut.length?"#fca5a5":C.border}`,borderRadius:16,overflow:"hidden",cursor:"pointer"}} role="button" tabIndex={0} aria-label={`${shoe.brand} ${shoe.name} 库存${total}双`}>
-              <div style={{display:"flex"}}><PhotoBox shoe={shoe} size={isMobile?100:120} isAdmin={isAdmin} uploadState={uploadState} onUpload={handlePhotoUpload} onRemove={removePhoto} onZoom={setZoomPhoto}/>
-                <div style={{flex:1,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"center",minWidth:0}}>
-                  <div style={{fontSize:15,fontWeight:800,lineHeight:1.2}}>{shoe.brand}</div>
-                  <div style={{fontSize:13,fontWeight:600,color:C.text2}}>{shoe.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>{shoe.color}</div>
-                  <div style={{marginTop:10,display:"flex",alignItems:"baseline",gap:3}}><span style={{fontSize:30,fontWeight:800,lineHeight:1}}>{total}</span><span style={{fontSize:11,color:C.text3}}>双</span></div>
-                </div>
-              </div>
-              <div style={{padding:"10px 12px 12px",borderTop:`1px solid ${C.border}`}}>
-                <div style={{display:"grid",gridTemplateColumns:`repeat(${sizes.length},1fr)`,gap:3}} role="row">{sizes.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz} compact thresh={lowThresh}/>)}</div>
-                {soldOut.length>0&&<div style={{fontSize:10,color:C.red,marginTop:8,fontWeight:500}}>⚠ 断码：{soldOut.join(" / ")} 码</div>}
-                {low.length>0&&!soldOut.length&&<div style={{fontSize:10,color:C.yellow,marginTop:8}}>▲ 低库存：{low.join(" / ")} 码</div>}
-                {isAdmin&&<div style={{display:"flex",gap:6,marginTop:10}} onClick={e=>e.stopPropagation()}>
-                  <button onClick={e=>{e.stopPropagation();requireAdmin(()=>openBatch("in",shoe.id));}} className="focus-ring" style={{flex:1,background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:8,padding:"6px 0",color:C.green,fontSize:11,fontWeight:700,cursor:"pointer"}}>↑ 入仓</button>
-                  <button onClick={e=>{e.stopPropagation();requireAdmin(()=>openBatch("out",shoe.id));}} className="focus-ring" style={{flex:1,background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:8,padding:"6px 0",color:C.red,fontSize:11,fontWeight:700,cursor:"pointer"}}>↓ 出仓</button>
-                  <button onClick={e=>{e.stopPropagation();requireAdmin(()=>openCheck(shoe.id));}} className="focus-ring" style={{flex:1,background:C.purpleBg,border:`1px solid ${C.purpleBd}`,borderRadius:8,padding:"6px 0",color:C.purple,fontSize:11,fontWeight:700,cursor:"pointer"}}>☐ 盘点</button>
-                </div>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>);
+  function saveProduct(event){
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const product = {
+      brand: String(form.get("brand") || "").trim(),
+      name: String(form.get("name") || "").trim(),
+      color: String(form.get("color") || "").trim(),
+      price: Number(form.get("price")) || 0
+    };
+    if(!product.brand || !product.name) return showToast("品牌和款式名称必填", true);
+    if(state.modal.id){
+      state.products = state.products.map(p => p.id === state.modal.id ? {...p, ...product} : p);
+    }else{
+      state.products = [{id:uid(), image:"", ...product}, ...state.products];
+    }
+    saveData();
+    closeModal();
+    showToast("款式已保存");
   }
-
-  // ─── 进出仓页 ───
-  function PageOps(){
-    const[checkPickShoe,setCheckPickShoe]=useState(null);
-    return(<div>
-      <div className="page-header"><div><div className="page-title">进出仓</div><div className="page-subtitle">今日 {todayLogs.length} 笔记录</div></div></div>
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr 1fr":"200px 200px 200px",gap:12,marginBottom:16}}>
-        {[{type:"in",icon:"↑",label:"入仓",bg:C.greenBg,border:C.greenBd,color:C.green},{type:"out",icon:"↓",label:"出仓",bg:C.redBg,border:C.redBd,color:C.red}].map(b=>(
-          <button key={b.type} className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>openBatch(b.type,null))} style={{background:b.bg,border:`1.5px solid ${b.border}`,borderRadius:16,padding:"24px 12px",cursor:"pointer",color:b.color,textAlign:"center"}}>
-            <div style={{fontSize:28,marginBottom:6}} aria-hidden="true">{b.icon}</div><div style={{fontSize:16,fontWeight:700}}>{b.label}</div><div style={{fontSize:10,color:C.text3,marginTop:4}}>多码批量录入</div>{!isAdmin&&<div style={{fontSize:9,color:C.text3,marginTop:2}}>🔒 需要权限</div>}
-          </button>
-        ))}
-        <button className="btn-hover focus-ring" onClick={()=>requireAdmin(()=>setCheckPickShoe(true))} style={{background:C.purpleBg,border:`1.5px solid ${C.purpleBd}`,borderRadius:16,padding:"24px 12px",cursor:"pointer",color:C.purple,textAlign:"center"}}>
-          <div style={{fontSize:28,marginBottom:6}} aria-hidden="true">☐</div><div style={{fontSize:16,fontWeight:700}}>盘点</div><div style={{fontSize:10,color:C.text3,marginTop:4}}>实物清点核对</div>{!isAdmin&&<div style={{fontSize:9,color:C.text3,marginTop:2}}>🔒 需要权限</div>}
-        </button>
-      </div>
-      {/* 盘点选款弹窗 */}
-      {checkPickShoe&&(
-        <div style={modalWrap(isMobile)} onClick={()=>setCheckPickShoe(null)} role="dialog" aria-modal="true" aria-label="选择盘点款式">
-          <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:440}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:C.purple}}>☐ 选择要盘点的款式</div><button onClick={()=>setCheckPickShoe(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:"60vh",overflowY:"auto"}}>
-              {shoes.map(sh=>{const tot=shoeTotal(sh.id);return(
-                <div key={sh.id} onClick={()=>{setCheckPickShoe(null);openCheck(sh.id);}} style={{display:"flex",alignItems:"center",gap:10,background:C.surface,borderRadius:10,padding:"10px 14px",cursor:"pointer",border:`1px solid ${C.border}`,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background="#f9f9f7"} onMouseLeave={e=>e.currentTarget.style.background=C.surface}>
-                  {sh.photoUrl?<img src={sh.photoUrl} alt="" style={{width:36,height:36,objectFit:"cover",borderRadius:8,flexShrink:0}}/>:<div style={{width:36,height:36,borderRadius:8,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👟</div>}
-                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{sh.brand} {sh.name}</div><div style={{fontSize:10,color:C.text3}}>{sh.color}</div></div>
-                  <div style={{fontSize:14,fontWeight:800,color:C.text,flexShrink:0}}>{tot}<span style={{fontSize:10,color:C.text3,marginLeft:2}}>双</span></div>
-                </div>
-              );})}
-            </div>
-            <button onClick={()=>setCheckPickShoe(null)} className="focus-ring" style={{width:"100%",marginTop:14,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
-          </div>
-        </div>
-      )}
-      <div style={{fontSize:9,letterSpacing:2,color:C.text3,textTransform:"uppercase",marginBottom:12}}>今日记录</div>
-      {todayLogs.length===0
-        ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>今日暂无记录</div>
-        :<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
-          {todayLogs.map((l,i)=>{const sh=shoeById[l.shoeId];const isIn=l.type==="in";const isReverse=l.type?.startsWith("reverse");const isAdjust=l.type==="check-adjust";
-            return(
-              <div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:i<todayLogs.length-1?`1px solid ${C.border}`:"none",opacity:isReverse?0.6:1}}>
-                <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                  {sh?.photoUrl?<img src={sh.photoUrl} alt="" style={{width:40,height:40,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`,flexShrink:0}}/>:<div style={{width:40,height:40,borderRadius:9,background:isReverse?C.purpleBg:isAdjust?C.accentBg:isIn?C.greenBg:C.redBg,border:`1px solid ${isReverse?C.purpleBd:isAdjust?C.accentBd:isIn?C.greenBd:C.redBd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red,flexShrink:0}} aria-hidden="true">{isReverse?"↩":isAdjust?"☐":isIn?"↑":"↓"}</div>}
-                  <div><div style={{fontSize:13,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"} <span style={{color:C.text3,fontSize:12}}>{l.size===0?"无码":l.size+"码"}</span></div>{l.note&&<div style={{fontSize:10,color:C.text3,marginTop:1}}>{l.note}</div>}<div style={{fontSize:10,color:C.text3,marginTop:1}}>{fmtTime(l.time)}</div></div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{fontSize:20,fontWeight:800,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red}}>{(isIn||l.type==="reverse-out"||l.type==="check-adjust"&&l.qty>0)?"+":"-"}{Math.abs(l.qty)}</div>
-                  {isAdmin&&!isReverse&&!isAdjust&&<button onClick={()=>reverseLog(l)} className="focus-ring" style={{background:C.purpleBg,border:`1px solid ${C.purpleBd}`,borderRadius:7,padding:"4px 8px",color:C.purple,fontSize:11,cursor:"pointer",fontWeight:600}}>冲正</button>}
-                  {isAdmin&&<button onClick={()=>deleteLog(l)} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:7,padding:"4px 8px",color:C.red,fontSize:11,cursor:"pointer",fontWeight:600}}>删除</button>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+  async function setImage(productId, file){
+    if(!file) return;
+    if(!file.type.startsWith("image/")) return showToast("请选择图片文件", true);
+    if(file.size > 5 * 1024 * 1024) return showToast("图片不要超过 5MB", true);
+    const dataUrl = await compressImage(file);
+    state.products = state.products.map(p => p.id === productId ? {...p, image:dataUrl} : p);
+    saveData();
+    renderShell();
+    showToast("图片已保存到本地");
+  }
+  function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const max = 760;
+          let {width, height} = img;
+          if(width > height && width > max){ height = Math.round(height * max / width); width = max; }
+          if(height >= width && height > max){ width = Math.round(width * max / height); height = max; }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", .82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function exportJson(){
+    const data = {version:1, exportedAt:new Date().toISOString(), products:state.products, logs:state.logs, sizes:state.sizes, checks:state.checks, threshold:state.threshold};
+    download(`仓库备份_${todayKey()}.json`, JSON.stringify(data,null,2), "application/json");
+    showToast("JSON 备份已导出");
+  }
+  function exportCsv(){
+    const inv = buildInventory();
+    const rows = [["品牌","款式","颜色","采购价",...state.sizes.map(s => `${s}码`),"总库存","库存价值"]];
+    state.products.forEach(p => {
+      const total = totalOf(inv, p.id);
+      rows.push([p.brand,p.name,p.color,p.price || 0,...state.sizes.map(size => inv[p.id]?.[size] || 0),total,total * (p.price || 0)]);
+    });
+    const csv = "\uFEFF" + rows.map(row => row.map(csvCell).join(",")).join("\n");
+    download(`库存表_${todayKey()}.csv`, csv, "text/csv;charset=utf-8");
+    showToast("CSV 已导出");
+  }
+  function download(filename, content, type){
+    const blob = new Blob([content], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importJson(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data.products) || !Array.isArray(data.logs)) throw new Error("格式不正确");
+        state.products = data.products;
+        state.logs = data.logs;
+        state.sizes = normalizeSizes(data.sizes || state.sizes);
+        state.checks = Array.isArray(data.checks) ? data.checks : [];
+        state.threshold = Number(data.threshold) || state.threshold;
+        saveData();
+        renderShell();
+        showToast("导入成功");
+      }catch(err){
+        showToast("导入失败：" + err.message, true);
       }
-    </div>);
+    };
+    reader.readAsText(file);
   }
 
-  // ─── 流水页（含分页） ───
-  function PageLogs(){
-    const[channelFilter,setChannelFilter]=useState("all");
-    const allLogs=useMemo(()=>{const result=[];sortedDates.forEach(date=>{(logsByDate[date]||[]).forEach(l=>{result.push({...l,_date:date});});});return result;},[sortedDates,logsByDate]);
-    const filteredLogs=useMemo(()=>channelFilter==="all"?allLogs:allLogs.filter(l=>l.channel===channelFilter),[allLogs,channelFilter]);
-    const{page:pg,setPage:setPg,totalPages,paged}=usePagination(filteredLogs,30);
-    const pagedByDate=useMemo(()=>{const m={};paged.forEach(l=>{if(!m[l._date])m[l._date]=[];m[l._date].push(l);});return m;},[paged]);
-    return(<div>
-      <div className="page-header"><div><div className="page-title">流水记录</div><div className="page-subtitle">共 {logs.length} 条记录</div></div>
-        <div style={{display:"flex",gap:6}}>
-          {[{v:"all",label:"全部"},{v:"网店",label:"🛒 网店"},{v:"门店",label:"🏪 门店"}].map(f=>(
-            <button key={f.v} onClick={()=>{setChannelFilter(f.v);setPg(1);}} style={{background:channelFilter===f.v?C.accent:"#fff",color:channelFilter===f.v?"#fff":C.text2,border:`1px solid ${channelFilter===f.v?C.accent:C.border2}`,borderRadius:8,padding:"7px 14px",fontSize:12,cursor:"pointer",fontWeight:channelFilter===f.v?700:400}}>{f.label}</button>
-          ))}
-        </div>
-      </div>
-      {sortedDates.length===0
-        ?<div style={{textAlign:"center",color:C.text3,padding:"60px 0",fontSize:13,background:C.surface,borderRadius:14,border:`1px solid ${C.border}`}}>暂无记录</div>
-        :<>{Object.entries(pagedByDate).map(([date,dl])=>{
-            const din=dl.filter(l=>l.type==="in").reduce((a,b)=>a+b.qty,0);const dout=dl.filter(l=>l.type==="out").reduce((a,b)=>a+b.qty,0)-dl.filter(l=>l.type==="reverse-out").reduce((a,b)=>a+b.qty,0);
-            return(<div key={date} style={{marginBottom:20}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{fontSize:12,fontWeight:700,color:C.text2}}>{fmtDate(date)}</div>
-                <div style={{fontSize:12}}><span style={{color:C.green,fontWeight:600}}>↑{din}</span><span style={{color:C.border2,margin:"0 8px"}}>·</span><span style={{color:C.red,fontWeight:600}}>↓{dout}</span></div>
-              </div>
-              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden"}}>
-                {dl.map((l,i)=>{const sh=shoeById[l.shoeId];const isIn=l.type==="in";const isReverse=l.type?.startsWith("reverse");const isAdjust=l.type==="check-adjust";
-                  return(
-                    <div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:i<dl.length-1?`1px solid ${C.border}`:"none",opacity:isReverse?0.6:1}}>
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <span style={{color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red,fontSize:13}} aria-hidden="true">{isReverse?"↩":isAdjust?"☐":isIn?"↑":"↓"}</span>
-                        <div>
-                          <span style={{fontSize:12,fontWeight:500}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</span>
-                          <span style={{fontSize:11,color:C.text3,marginLeft:6}}>{l.size===0?"无码":l.size+"码"}</span>
-                          {l.channel&&<span style={{fontSize:9,marginLeft:6,padding:"1px 6px",borderRadius:4,background:l.channel==="网店"?C.accentBg:C.purpleBg,color:l.channel==="网店"?C.accent:C.purple,fontWeight:600}}>{l.channel==="网店"?"🛒":"🏪"}{l.channel}</span>}
-                          {l.note&&<span style={{fontSize:10,color:C.text3,marginLeft:6}}>{l.note}</span>}
-                        </div>
-                      </div>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:700,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red}}>{(isIn||l.type==="reverse-out"||(isAdjust&&l.qty>0))?"+":"-"}{Math.abs(l.qty)}</div><div style={{fontSize:9,color:C.text3}}>{fmtTime(l.time)}</div></div>
-                        {isAdmin&&!isReverse&&!isAdjust&&<button onClick={()=>reverseLog(l)} className="focus-ring" style={{background:C.purpleBg,border:`1px solid ${C.purpleBd}`,borderRadius:7,padding:"4px 8px",color:C.purple,fontSize:11,cursor:"pointer",fontWeight:600}}>冲正</button>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>);
-          })}
-          <Pagination page={pg} totalPages={totalPages} setPage={setPg}/>
-        </>
+  app.addEventListener("click", event => {
+    const pageButton = event.target.closest("[data-page]");
+    if(pageButton){
+      state.page = pageButton.dataset.page;
+      renderShell();
+      return;
+    }
+    const actionEl = event.target.closest("[data-action]");
+    const card = event.target.closest("[data-card]");
+    if(actionEl){
+      const action = actionEl.dataset.action;
+      const id = actionEl.dataset.id;
+      if(action === "login") return requireAdmin(() => {});
+      if(action === "logout"){ state.isAdmin = false; renderShell(); return showToast("已退出管理员"); }
+      if(action === "open-stock") return openStock(actionEl.dataset.mode, id);
+      if(action === "pick-check"){ state.modal = {type:"pick-check"}; return renderShell(); }
+      if(action === "reverse-log") return reverseLog(id);
+      if(action === "add-product") return requireAdmin(() => { state.modal = {type:"product"}; renderShell(); });
+      if(action === "edit-product") return requireAdmin(() => { state.modal = {type:"product", id}; renderShell(); });
+      if(action === "pick-image") return requireAdmin(() => document.querySelector(`[data-image-input="${CSS.escape(id)}"]`)?.click());
+      if(action === "save-threshold"){
+        const v = Number(document.getElementById("threshold")?.value);
+        if(!v || v < 1 || v > 99) return showToast("阈值请输入 1-99", true);
+        state.threshold = v; saveData(); renderShell(); return showToast("阈值已保存");
       }
-    </div>);
-  }
-
-  // ─── 报表页（新增） ───
-  function PageReport(){
-    return(<div>
-      <div className="page-header">
-        <div><div className="page-title">数据报表</div><div className="page-subtitle">KPI · 趋势 · 库存分布</div></div>
-        <div style={{display:"flex",gap:8}}>
-          <button className="btn-hover focus-ring" onClick={()=>requireAdmin(exportCSV)} style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:"8px 16px",color:C.green,fontSize:12,fontWeight:700,cursor:"pointer"}}>⬇ 导出CSV</button>
-        </div>
-      </div>
-
-      {/* KPI 卡片 */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:12,marginBottom:24}}>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>缺货率</div>
-          <div style={{fontSize:28,fontWeight:800,color:stockoutRate>30?C.red:stockoutRate>15?C.yellow:C.green}}>{stockoutRate}%</div>
-          <div style={{fontSize:10,color:C.text3,marginTop:4}}>断码款式 / 总款式</div>
-        </div>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>月周转率</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.accent}}>{turnoverRate}</div>
-          <div style={{fontSize:10,color:C.text3,marginTop:4}}>30日出仓量 / 当前库存</div>
-        </div>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>库存总价值</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.text}}>{totalInvValue>0?`¥${totalInvValue.toLocaleString()}`:"—"}</div>
-          <div style={{fontSize:10,color:C.text3,marginTop:4}}>{totalInvValue>0?"按采购价计算":"请在款式中填写采购价"}</div>
-        </div>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontSize:10,color:C.text3,letterSpacing:1,marginBottom:8}}>上次盘点</div>
-          <div style={{fontSize:28,fontWeight:800,color:daysSinceCheck===null?C.text3:daysSinceCheck>30?C.red:daysSinceCheck>14?C.yellow:C.green}}>{daysSinceCheck===null?"未盘":daysSinceCheck+"天"}</div>
-          <div style={{fontSize:10,color:C.text3,marginTop:4}}>{daysSinceCheck===null?"从未盘点":daysSinceCheck>30?"建议尽快盘点":"距上次盘点"}</div>
-        </div>
-      </div>
-
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14,marginBottom:24}}>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.text2,marginBottom:14}}>近7日入仓趋势</div>
-          <TrendChart data={last7Days.map(d=>({label:d.label,value:d.in}))} barColor={C.green}/>
-        </div>
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.text2,marginBottom:14}}>近7日出仓趋势</div>
-          <TrendChart data={last7Days.map(d=>({label:d.label,value:d.out}))} barColor={C.red}/>
-        </div>
-      </div>
-
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px",marginBottom:24}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.text2,marginBottom:14}}>各品牌库存占比</div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          {Object.entries(brandMap).map(([brand,info])=>{
-            const pct=totalStock>0?Math.round(info.total/totalStock*100):0;
-            const brandValue=info.shoes.reduce((s,sh)=>s+shoeTotal(sh.id)*(sh.price||0),0);
-            return(<div key={brand} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 16px",flex:"1 0 auto",minWidth:120,textAlign:"center"}}>
-              <div style={{fontSize:24,fontWeight:800,color:C.text}}>{pct}%</div>
-              <div style={{fontSize:11,color:C.text2,fontWeight:600}}>{brand}</div>
-              <div style={{fontSize:10,color:C.text3}}>{info.total} 双{brandValue>0?` · ¥${brandValue.toLocaleString()}`:""}</div>
-            </div>);
-          })}
-        </div>
-      </div>
-
-      {/* 盘点记录 */}
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 20px"}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.text2,marginBottom:14}}>最近盘点记录</div>
-        {checks.length===0
-          ?<div style={{textAlign:"center",color:C.text3,padding:"30px 0",fontSize:12}}>暂无盘点记录</div>
-          :checks.slice(0,10).map(c=>{
-            const sh=shoeById[c.shoeId];
-            return(<div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div><div style={{fontSize:12,fontWeight:600}}>{sh?`${sh.brand} ${sh.name}`:"已删除"}</div><div style={{fontSize:10,color:C.text3}}>{c.date} · {c.reason||"未注明"} · {c.diffs?.length||0} 码差异</div></div>
-              <div style={{fontSize:10,color:C.purple,maxWidth:200,textAlign:"right"}}>{c.diffs?.slice(0,3).join("; ")||"无差异"}{(c.diffs?.length||0)>3?"…":""}</div>
-            </div>);
-          })
-        }
-      </div>
-    </div>);
-  }
-
-  // ─── 款式管理页 ───
-  function PageShoes(){
-    return(<div>
-      <div className="page-header">
-        <div><div className="page-title">款式管理</div><div className="page-subtitle">共 {shoes.length} 款</div></div>
-        {isAdmin&&<button className="btn-hover focus-ring" onClick={()=>{setShoeForm({brand:"",name:"",color:"",price:""});setShoeModal("add");}} style={{background:C.accent,border:"none",borderRadius:10,padding:"10px 20px",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>+ 新增款式</button>}
-      </div>
-      <div className="shoe-grid">
-        {shoes.map(shoe=>{const total=shoeTotal(shoe.id);return(
-          <div key={shoe.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,overflow:"hidden"}}>
-            <div style={{display:"flex"}}><PhotoBox shoe={shoe} size={isMobile?90:110} isAdmin={isAdmin} uploadState={uploadState} onUpload={handlePhotoUpload} onRemove={removePhoto} onZoom={setZoomPhoto}/>
-              <div style={{flex:1,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-                <div><div style={{fontSize:14,fontWeight:700}}>{shoe.brand} {shoe.name}</div><div style={{fontSize:11,color:C.text3,marginTop:3}}>{shoe.color} · {total} 双{shoe.price>0?` · ¥${shoe.price}`:""}</div></div>
-                {isAdmin&&<div style={{display:"flex",gap:6,marginTop:8}}>
-                  <button onClick={()=>{setShoeForm({brand:shoe.brand,name:shoe.name,color:shoe.color,price:shoe.price||""});setShoeModal(shoe);}} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:6,padding:"5px 14px",color:C.text2,fontSize:11,cursor:"pointer"}}>编辑</button>
-                  <button onClick={()=>deleteShoe(shoe.id)} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:6,padding:"5px 14px",color:C.red,fontSize:11,cursor:"pointer"}}>删除</button>
-                </div>}
-              </div>
-            </div>
-            <div style={{padding:"10px 12px 12px",borderTop:`1px solid ${C.border}`}}><div style={{display:"grid",gridTemplateColumns:`repeat(${sizes.length},1fr)`,gap:3}}>{sizes.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz} compact thresh={lowThresh}/>)}</div></div>
-          </div>
-        );})}
-      </div>
-    </div>);
-  }
-
-  // ─── 设置页 ───
-  function PageSettings(){
-    const[newPw,setNewPw]=useState("");const[newPw2,setNewPw2]=useState("");const[oldPw,setOldPw]=useState("");const[pwMsg,setPwMsg]=useState(null);
-    const[threshInput,setThreshInput]=useState(String(lowThresh));
-    const[sizeInput,setSizeInput]=useState(sizes.join(", "));
-    const importRef=useRef();
-    const sinp={...inp,padding:"9px 12px",fontSize:13};
-
-    async function changePw(){
-      if(!isAdmin){setPwMsg({text:"需要先登录管理员",type:"err"});return;}
-      const oldHash=await hashPassword(oldPw);
-      if(oldHash!==pwHash){setPwMsg({text:"原密码错误",type:"err"});return;}
-      if(newPw.length<4){setPwMsg({text:"新密码至少4位",type:"err"});return;}
-      if(newPw!==newPw2){setPwMsg({text:"两次密码不一致",type:"err"});return;}
-      const h=await hashPassword(newPw);setPwHash(h);saveLS(KEY_PW_HASH,h);setOldPw("");setNewPw("");setNewPw2("");
-      setPwMsg({text:"✓ 密码已更新",type:"ok"});setTimeout(()=>setPwMsg(null),3000);
+      if(action === "save-sizes"){
+        const next = normalizeSizes((document.getElementById("sizes")?.value || "").split(/[,，\s]+/));
+        if(next.length < 2) return showToast("至少保留两个尺码", true);
+        state.sizes = next; saveData(); renderShell(); return showToast("尺码已保存");
+      }
+      if(action === "export-json") return exportJson();
+      if(action === "export-csv") return exportCsv();
+      if(action === "pick-import") return requireAdmin(() => document.getElementById("importFile")?.click());
     }
-    function saveThresh(){
-      const v=parseInt(threshInput);if(isNaN(v)||v<1||v>20){showToast("请输入1-20之间的数字","err");return;}
-      setLowThresh(v);saveLS(KEY_THRESH,v);showToast(`✓ 预警阈值已设为 ${v} 双`);
+    if(card){
+      state.modal = {type:"detail", id:card.dataset.card};
+      renderShell();
     }
-    function saveSizes(){
-      const parsed=sizeInput.split(/[,，\s]+/).map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&n>0);
-      if(parsed.length<2){showToast("至少需要2个尺码","err");return;}
-      const sorted=[...new Set(parsed)].sort((a,b)=>a-b);
-      setSizes(sorted);saveLS(KEY_SIZES,sorted);setSizeInput(sorted.join(", "));showToast(`✓ 尺码已更新为 ${sorted.join(", ")}`);
+  });
+  modalRoot.addEventListener("click", event => {
+    const actionEl = event.target.closest("[data-action]");
+    if(!actionEl) return;
+    const action = actionEl.dataset.action;
+    if(action === "close-modal") return closeModal();
+    if(action === "submit-auth") return submitAuth();
+    if(action === "submit-stock") return submitStock();
+    if(action === "submit-check") return submitCheck();
+    if(action === "open-stock") return openStock(actionEl.dataset.mode, actionEl.dataset.id);
+    if(action === "reverse-log") return reverseLog(actionEl.dataset.id);
+  });
+  modalRoot.addEventListener("change", event => {
+    if(event.target.id === "stockProduct" && state.modal?.type === "stock"){
+      state.modal.id = event.target.value;
+      renderShell();
     }
+  });
+  modalRoot.addEventListener("submit", event => {
+    if(event.target.id === "productForm") saveProduct(event);
+  });
+  app.addEventListener("input", event => {
+    if(event.target.id === "keyword"){
+      state.keyword = event.target.value;
+      renderShell();
+    }
+  });
+  app.addEventListener("change", event => {
+    if(event.target.id === "sort"){
+      state.sort = event.target.value;
+      renderShell();
+    }
+    if(event.target.id === "logFilter"){
+      state.logFilter = event.target.value;
+      renderShell();
+    }
+    if(event.target.matches("[data-image-input]")){
+      setImage(event.target.dataset.imageInput, event.target.files[0]);
+    }
+    if(event.target.id === "importFile"){
+      importJson(event.target.files[0]);
+      event.target.value = "";
+    }
+  });
+  app.addEventListener("click", event => {
+    if(event.target.matches("[data-sort-risk]")){
+      state.sort = "risk";
+      renderShell();
+    }
+  });
+  window.addEventListener("keydown", event => {
+    if(event.key === "Escape" && state.modal) closeModal();
+  });
 
-    return(<div>
-      <div className="page-header"><div><div className="page-title">系统设置</div><div className="page-subtitle">密码 · 预警 · 尺码 · 数据备份</div></div></div>
-
-      <div className="settings-section">
-        <div className="settings-section-title">🔒 管理员密码</div>
-        {!isAdmin&&<div style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:10,padding:"10px 14px",fontSize:12,color:C.yellow,fontWeight:600,marginBottom:14}}>⚠ 请先登录管理员账号才能修改密码</div>}
-        {!pwHash&&<div style={{background:C.accentBg,border:`1px solid ${C.accentBd}`,borderRadius:10,padding:"10px 14px",fontSize:12,color:C.accent,fontWeight:600,marginBottom:14}}>ℹ 尚未设置密码，点击任意管理操作时将提示设置</div>}
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr",gap:10,marginBottom:12}}>
-          <div><div style={{fontSize:10,color:C.text3,marginBottom:5}}>原密码</div><input type="password" value={oldPw} onChange={e=>setOldPw(e.target.value)} placeholder="输入原密码" style={sinp}/></div>
-          <div><div style={{fontSize:10,color:C.text3,marginBottom:5}}>新密码</div><input type="password" value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="至少4位" style={sinp}/></div>
-          <div><div style={{fontSize:10,color:C.text3,marginBottom:5}}>确认新密码</div><input type="password" value={newPw2} onChange={e=>setNewPw2(e.target.value)} placeholder="再次输入" style={sinp}/></div>
-        </div>
-        {pwMsg&&<div style={{fontSize:12,color:pwMsg.type==="err"?C.red:C.green,fontWeight:600,marginBottom:10}}>{pwMsg.text}</div>}
-        <button onClick={changePw} className="focus-ring" style={{background:C.accent,border:"none",borderRadius:10,padding:"9px 22px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>更新密码</button>
-      </div>
-
-      {/* 尺码配置（新增） */}
-      <div className="settings-section">
-        <div className="settings-section-title">👟 尺码配置</div>
-        <div className="settings-row">
-          <div style={{flex:1,marginRight:16}}><div className="settings-label">自定义尺码列表</div><div className="settings-desc">用逗号分隔，支持半码（如 42.5）。当前：{sizes.join(", ")}</div>
-            <input value={sizeInput} onChange={e=>setSizeInput(e.target.value)} placeholder="36, 37, 38, 39, 40, 41, 42, 43, 44" style={{...sinp,marginTop:8}}/>
-          </div>
-          <button onClick={saveSizes} className="focus-ring" style={{background:C.accent,border:"none",borderRadius:8,padding:"8px 16px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,alignSelf:"flex-end"}}>保存</button>
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-section-title">📊 库存预警阈值</div>
-        <div className="settings-row">
-          <div><div className="settings-label">低库存预警线</div><div className="settings-desc">当某码库存 ≤ 此数值时，显示黄色警告（当前：{lowThresh} 双）</div></div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <input type="number" min="1" max="20" value={threshInput} onChange={e=>setThreshInput(e.target.value)} aria-label="预警阈值" style={{width:70,background:"#fff",border:`1px solid ${C.border2}`,borderRadius:8,padding:"7px 10px",fontSize:14,fontWeight:700,outline:"none",textAlign:"center"}}/>
-            <button onClick={saveThresh} className="focus-ring" style={{background:C.accent,border:"none",borderRadius:8,padding:"8px 16px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>保存</button>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-          {[{color:C.green,bg:C.greenBg,bd:C.greenBd,label:`> ${lowThresh} 双`,desc:"正常"},{color:C.yellow,bg:C.yellowBg,bd:C.yellowBd,label:`1–${lowThresh} 双`,desc:"低库存"},{color:C.red,bg:C.redBg,bd:C.redBd,label:"0 双",desc:"断码"}].map(item=>(
-            <div key={item.desc} style={{display:"flex",alignItems:"center",gap:7,background:item.bg,border:`1px solid ${item.bd}`,borderRadius:8,padding:"7px 12px"}}>
-              <div style={{width:10,height:10,borderRadius:"50%",background:item.color}} aria-hidden="true"/><span style={{fontSize:11,color:item.color,fontWeight:700}}>{item.desc}</span><span style={{fontSize:11,color:C.text3}}>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-section-title">💾 数据备份 / 恢复</div>
-        <div className="settings-row">
-          <div><div className="settings-label">导出 JSON 备份</div><div className="settings-desc">完整备份（款式+流水+盘点+配置）</div></div>
-          <button onClick={exportJSON} className="focus-ring" style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:"9px 18px",color:C.green,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>⬇ JSON备份</button>
-        </div>
-        <div className="settings-row">
-          <div><div className="settings-label">导出 CSV 库存表</div><div className="settings-desc">当前库存快照，可用 Excel 打开</div></div>
-          <button onClick={()=>requireAdmin(exportCSV)} className="focus-ring" style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:"9px 18px",color:C.green,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>⬇ CSV库存</button>
-        </div>
-        <div className="settings-row">
-          <div><div className="settings-label">导入恢复</div><div className="settings-desc">从 JSON 备份文件恢复（将覆盖当前数据）</div></div>
-          <div>
-            <button onClick={()=>requireAdmin(()=>importRef.current?.click())} className="focus-ring" style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:10,padding:"9px 18px",color:C.yellow,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>⬆ 导入文件</button>
-            <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={e=>{if(e.target.files[0])importData(e.target.files[0]);e.target.value="";}}/>
-          </div>
-        </div>
-        <div style={{marginTop:14,padding:"12px 14px",background:C.bg,borderRadius:10,border:`1px solid ${C.border}`,fontSize:11,color:C.text3,lineHeight:1.7}}>
-          📋 当前数据：<strong style={{color:C.text}}>{shoes.length} 款鞋</strong> · <strong style={{color:C.text}}>{logs.length} 条记录</strong> · <strong style={{color:C.text}}>{checks.length} 次盘点</strong><br/>
-          🕐 建议每周导出一次备份，防止数据意外丢失
-        </div>
-      </div>
-
-      <div className="settings-section" style={{border:`1px solid ${C.redBd}`}}>
-        <div className="settings-section-title" style={{color:C.red}}>⚠ 危险操作</div>
-        <div className="settings-row">
-          <div><div className="settings-label">清空全部流水记录</div><div className="settings-desc">库存归零，款式资料保留</div></div>
-          <button onClick={()=>requireAdmin(()=>{if(!confirm("确认清空全部流水记录？\n所有库存归零，款式资料不受影响。\n此操作不可撤销！"))return;updateData(null,[]);showToast("✓ 已清空流水");})} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:10,padding:"9px 16px",color:C.red,fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>🗑 清空流水</button>
-        </div>
-        <div className="settings-row">
-          <div><div className="settings-label">完全重置系统</div><div className="settings-desc">删除所有数据，恢复初始状态</div></div>
-          <button onClick={()=>requireAdmin(()=>{if(!confirm("确认完全重置？所有数据将被删除！"))return;updateData([],[]);setChecks([]);saveLS(KEY_CHECKS,[]);showToast("✓ 已完全重置");})} className="focus-ring" style={{background:"#7f1d1d",border:"1px solid #991b1b",borderRadius:10,padding:"9px 16px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>💥 完全重置</button>
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-section-title">ℹ 系统信息</div>
-        <div className="settings-row"><div><div className="settings-label">云同步</div><div className="settings-desc">{CLOUD_ON?"JSONBin 已配置":"未配置（纯本地模式）"}</div></div><SyncBadge syncStatus={syncStatus} lastSync={lastSync} pullCloud={pullCloud}/></div>
-        <div className="settings-row"><div><div className="settings-label">图片上传</div><div className="settings-desc">{CDN_ON?"Cloudinary 已配置":"未配置"}</div></div><div style={{fontSize:10,color:CDN_ON?C.green:C.text3}}>{CDN_ON?"✓ 已连接":"- 离线"}</div></div>
-        <div className="settings-row"><div><div className="settings-label">登录状态</div><div className="settings-desc">{isAdmin?"管理员已登录（15分钟无操作自动退出）":"普通查看模式"}</div></div>
-          {isAdmin?<button onClick={logout} className="focus-ring" style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"6px 14px",color:C.yellow,fontSize:11,cursor:"pointer",fontWeight:600}}>退出登录</button>:<button onClick={()=>requireAdmin(()=>{})} className="focus-ring" style={{background:C.accentBg,border:`1px solid ${C.accentBd}`,borderRadius:8,padding:"6px 14px",color:C.accent,fontSize:11,cursor:"pointer",fontWeight:600}}>登录管理员</button>}
-        </div>
-        <div className="settings-row" style={{borderBottom:"none"}}><div><div className="settings-label">版本</div><div className="settings-desc">v2.1 — 智能填充 / 采购价 / KPI / 盘点增强 / 自动登出</div></div></div>
-      </div>
-    </div>);
-  }
-
-  const pageMap={home:<PageHome/>,ops:<PageOps/>,logs:<PageLogs/>,report:<PageReport/>,shoes:<PageShoes/>,settings:<PageSettings/>};
-
-  // ═══════════════════════════════════════════════
-  // 主渲染
-  // ═══════════════════════════════════════════════
-  return(
-    <div className="app-shell">
-      <aside className="sidebar" role="navigation" aria-label="主导航">
-        <div className="sidebar-logo"><div className="en">Shoe Warehouse</div><div className="zh">仓库管理</div><div style={{marginTop:8}}><SyncBadge syncStatus={syncStatus} lastSync={lastSync} pullCloud={pullCloud}/></div></div>
-        <nav className="sidebar-nav">
-          {nav.map(n=>(<button key={n.key} className={`sidebar-nav-item focus-ring${page===n.key?" active":""}`} onClick={()=>setPage(n.key)} aria-current={page===n.key?"page":undefined}><span className="nav-icon" aria-hidden="true">{n.icon}</span><span>{n.label}</span></button>))}
-        </nav>
-        <div className="sidebar-bottom">
-          {isAdmin?<button onClick={logout} className="focus-ring" style={{width:"100%",background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"8px 0",color:C.yellow,fontSize:11,cursor:"pointer",fontWeight:600}}>👤 管理员 · 退出</button>:<button onClick={()=>requireAdmin(()=>{})} className="focus-ring" style={{width:"100%",background:C.bg,border:`1px solid ${C.border2}`,borderRadius:8,padding:"8px 0",color:C.text3,fontSize:11,cursor:"pointer"}}>🔒 登录管理</button>}
-        </div>
-      </aside>
-
-      <main className="main-content" role="main">
-        {isMobile&&(
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,paddingBottom:12,borderBottom:`1px solid ${C.border}`}}>
-            <div><div style={{fontSize:9,letterSpacing:3,color:C.text3,textTransform:"uppercase"}}>Shoe Warehouse</div><div style={{fontSize:19,fontWeight:800}}>仓库管理</div></div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <SyncBadge syncStatus={syncStatus} lastSync={lastSync} pullCloud={pullCloud}/>
-              {isAdmin?<button onClick={logout} className="focus-ring" style={{background:C.yellowBg,border:`1px solid ${C.yellowBd}`,borderRadius:8,padding:"4px 10px",color:C.yellow,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>管理员 · 退出</button>:<button onClick={()=>requireAdmin(()=>{})} className="focus-ring" style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:8,padding:"4px 10px",color:C.text3,fontSize:10,cursor:"pointer",whiteSpace:"nowrap"}}>🔒 登录</button>}
-            </div>
-          </div>
-        )}
-        {pageMap[page]}
-      </main>
-
-      <nav className="mobile-nav" role="navigation" aria-label="移动端导航"><div className="mobile-nav-inner">{nav.map(n=>(<button key={n.key} className="mobile-nav-btn focus-ring" onClick={()=>setPage(n.key)} aria-current={page===n.key?"page":undefined}><span style={{fontSize:15,color:page===n.key?C.accent:C.border2}} aria-hidden="true">{n.icon}</span><span style={{fontSize:10,color:page===n.key?C.accent:C.text3,letterSpacing:1,fontWeight:page===n.key?600:400}}>{n.label}</span></button>))}</div></nav>
-
-      {/* Toast */}
-      {toast&&<div role="alert" style={{position:"fixed",bottom:isMobile?100:30,left:"50%",transform:"translateX(-50%)",background:toast.type==="err"?"rgba(220,38,38,0.95)":"rgba(22,163,74,0.95)",color:"#fff",borderRadius:12,padding:"10px 20px",fontSize:13,fontWeight:600,zIndex:500,boxShadow:"0 4px 20px rgba(0,0,0,0.2)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
-
-      {/* 密码弹窗 */}
-      {pwModal&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:20}} role="dialog" aria-modal="true" aria-label={setupMode?"设置管理密码":"管理员验证"}>
-          <div className="zoom-in" style={{background:C.surface,borderRadius:20,padding:28,width:"100%",maxWidth:340,boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
-            <div style={{textAlign:"center",marginBottom:20}}><div style={{fontSize:36,marginBottom:8}} aria-hidden="true">🔒</div><div style={{fontSize:17,fontWeight:800}}>{setupMode?"设置管理密码":"管理员验证"}</div><div style={{fontSize:12,color:C.text3,marginTop:4}}>{setupMode?"首次使用，请设置管理密码（至少4位）":"请输入管理密码以继续操作"}</div></div>
-            <input type="password" value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}} onKeyDown={e=>{if(e.key==="Enter")submitPassword();}} placeholder={setupMode?"设置密码（至少4位）":"输入密码"} autoFocus aria-label="密码" style={{...inp,textAlign:"center",fontSize:18,letterSpacing:4,border:`1.5px solid ${pwError?C.red:C.border2}`,background:pwError?C.redBg:"#fff",marginBottom:8}}/>
-            {pwError&&<div style={{textAlign:"center",color:C.red,fontSize:12,marginBottom:8,fontWeight:500}} role="alert">{setupMode?"密码至少4位":"密码错误，请重试"}</div>}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:8}}>
-              <button onClick={()=>{setPwModal(null);setPwInput("");setPwError(false);setSetupMode(false);}} className="focus-ring" style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
-              <button onClick={submitPassword} className="focus-ring" style={{background:C.accent,border:"none",borderRadius:12,padding:13,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{setupMode?"设置":"确认"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 图片大图 */}
-      {zoomPhoto&&(
-        <div onClick={()=>setZoomPhoto(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20}} role="dialog" aria-modal="true" aria-label="查看大图">
-          <div className="zoom-in" style={{position:"relative"}} onClick={e=>e.stopPropagation()}>
-            <img src={zoomPhoto} alt="商品大图" style={{maxWidth:"min(600px,90vw)",maxHeight:"85vh",objectFit:"contain",borderRadius:16,boxShadow:"0 8px 48px rgba(0,0,0,0.6)",display:"block"}}/>
-            <button onClick={()=>setZoomPhoto(null)} aria-label="关闭大图" className="focus-ring" style={{position:"absolute",top:-14,right:-14,width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.15)",border:"2px solid rgba(255,255,255,0.5)",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,lineHeight:1}}>×</button>
-          </div>
-        </div>
-      )}
-
-      {/* 入仓/出仓弹窗 */}
-      {batchModal&&(()=>{
-        const isIn=batchModal.type==="in";const totalFill=batchForm._totalMode?parseInt(batchForm._totalQty)||0:sizes.reduce((a,sz)=>a+(parseInt(batchForm[sz])||0),0);const shoe=shoeById[batchModal.shoeId];
-        return(
-          <div style={modalWrap(isMobile)} role="dialog" aria-modal="true" aria-label={isIn?"入仓登记":"出仓登记"}>
-            <div className={isMobile?"slide-up":"zoom-in"} style={modalBox(isMobile)}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:isIn?C.green:C.red}}>{isIn?"↑ 入仓登记":"↓ 出仓登记"}</div><button onClick={()=>setBatchModal(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-              <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>选择款式</div><select value={batchModal.shoeId} onChange={e=>setBatchModal({...batchModal,shoeId:e.target.value})} aria-label="选择款式" style={{...inp}}>{shoes.map(s=><option key={s.id} value={s.id}>{s.brand} {s.name} {s.color}</option>)}</select></div>
-              {shoe?.photoUrl&&<div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,padding:"10px 12px",background:C.bg,borderRadius:10}}><img src={shoe.photoUrl} alt="" style={{width:52,height:52,objectFit:"cover",borderRadius:10,border:`1px solid ${C.border}`,cursor:"pointer"}} onClick={()=>setZoomPhoto(shoe.photoUrl)}/><div><div style={{fontSize:14,fontWeight:700}}>{shoe?.brand} {shoe?.name}</div><div style={{fontSize:11,color:C.text3}}>{shoe?.color}</div></div></div>}
-              {/* 按码/按总数切换 */}
-              <div style={{display:"flex",gap:8,marginBottom:14}}>
-                <button type="button" onClick={()=>setBatchForm({...batchForm,_totalMode:false,_totalQty:""})} style={{flex:1,padding:"8px 0",borderRadius:10,border:`1.5px solid ${!batchForm._totalMode?C.accent:C.border2}`,background:!batchForm._totalMode?C.accentBg:"#fff",color:!batchForm._totalMode?C.accent:C.text2,fontWeight:!batchForm._totalMode?700:400,fontSize:12,cursor:"pointer"}}>按码数入仓</button>
-                <button type="button" onClick={()=>setBatchForm({...batchForm,_totalMode:true})} style={{flex:1,padding:"8px 0",borderRadius:10,border:`1.5px solid ${batchForm._totalMode?C.accent:C.border2}`,background:batchForm._totalMode?C.accentBg:"#fff",color:batchForm._totalMode?C.accent:C.text2,fontWeight:batchForm._totalMode?700:400,fontSize:12,cursor:"pointer"}}>按总数入仓</button>
-              </div>
-              {batchForm._totalMode
-                ?<div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>入仓总数（双）</div><input type="number" min="1" value={batchForm._totalQty||""} onChange={e=>setBatchForm({...batchForm,_totalQty:e.target.value})} placeholder="请输入总数" autoFocus style={{...inp,fontSize:20,fontWeight:800,textAlign:"center"}}/></div>
-                :<><div style={{fontSize:10,color:C.text3,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}><span>各码数量（双）</span>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <input type="number" min="1" value={batchForm._smartTotal||""} onChange={e=>setBatchForm({...batchForm,_smartTotal:e.target.value})} placeholder="总数" aria-label="均分总数" style={{width:60,background:"#fff",border:`1px solid ${C.border2}`,borderRadius:6,padding:"4px 6px",fontSize:12,outline:"none",textAlign:"center"}}/>
-                    <button onClick={()=>smartFill(parseInt(batchForm._smartTotal)||0)} style={{background:C.accentBg,border:`1px solid ${C.accentBd}`,borderRadius:6,padding:"4px 10px",color:C.accent,fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>均分到各码</button>
-                    {totalFill>0&&<span style={{color:isIn?C.green:C.red,fontWeight:600,fontSize:11}}>合计 {totalFill} 双</span>}
-                  </div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:14}}>
-                  {sizes.map(sz=>{const cur=inv[batchModal.shoeId]?.[sz]||0;const curCol=getSzColor(cur,lowThresh);return(
-                    <div key={sz} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <div><div style={{fontSize:16,fontWeight:800,lineHeight:1}}>{sz}<span style={{fontSize:9,color:C.text3,marginLeft:2}}>码</span></div><div style={{fontSize:9,color:C.text3,marginTop:3}}>现有 <span style={{color:curCol,fontWeight:600}}>{cur}</span> 双</div></div>
-                      <input type="number" min="0" value={batchForm[sz]||""} onChange={e=>setBatchForm({...batchForm,[sz]:e.target.value})} aria-label={`${sz}码数量`} placeholder="0" style={{width:50,background:"#fff",border:`1px solid ${C.border2}`,borderRadius:8,padding:"8px 6px",color:C.text,fontSize:17,fontWeight:800,outline:"none",textAlign:"center"}}/>
-                    </div>
-                  );})}
-                </div></>
-              }
-              {!isIn&&<div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>出仓渠道 <span style={{color:C.red}}>*</span></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{["网店","门店"].map(ch=><button key={ch} type="button" onClick={()=>setBatchForm({...batchForm,channel:ch})} style={{padding:"10px 0",borderRadius:10,border:`1.5px solid ${batchForm.channel===ch?C.red:C.border2}`,background:batchForm.channel===ch?C.redBg:"#fff",color:batchForm.channel===ch?C.red:C.text2,fontWeight:batchForm.channel===ch?700:400,fontSize:13,cursor:"pointer"}}>{ch==="网店"?"🛒 网店":"🏪 门店"}</button>)}</div></div>}
-              <div style={{marginBottom:18}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>备注（可选）</div><input type="text" value={batchForm.note||""} onChange={e=>setBatchForm({...batchForm,note:e.target.value})} placeholder="如：供应商补货 / 门店出货..." aria-label="备注" style={{...inp}}/></div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <button onClick={()=>{setBatchModal(null);setBatchForm({});}} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
-                <button onClick={submitBatch} className="focus-ring" style={{background:isIn?C.green:C.red,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>确认{isIn?"入仓":"出仓"}{totalFill>0?` (${totalFill}双)`:""}</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 盘点弹窗（新增） */}
-      {checkModal&&(()=>{
-        const shoe=shoeById[checkModal.shoeId];const diffCount=sizes.filter(sz=>(parseInt(checkForm[sz])||0)!==(inv[checkModal.shoeId]?.[sz]||0)).length;
-        return(
-          <div style={modalWrap(isMobile)} role="dialog" aria-modal="true" aria-label="库存盘点">
-            <div className={isMobile?"slide-up":"zoom-in"} style={modalBox(isMobile)}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:16,fontWeight:700,color:C.purple}}>☐ 库存盘点</div><button onClick={()=>setCheckModal(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-              {shoe&&<div style={{marginBottom:14,padding:"10px 12px",background:C.bg,borderRadius:10,display:"flex",alignItems:"center",gap:10}}>
-                {shoe.photoUrl?<img src={shoe.photoUrl} alt="" style={{width:44,height:44,objectFit:"cover",borderRadius:8}}/>:<div style={{width:44,height:44,borderRadius:8,background:"#f0f0ec",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>👟</div>}
-                <div><div style={{fontSize:14,fontWeight:700}}>{shoe.brand} {shoe.name}</div><div style={{fontSize:11,color:C.text3}}>{shoe.color}</div></div>
-              </div>}
-              <div style={{fontSize:10,color:C.text3,marginBottom:10}}>请输入各码位实际库存数量（系统将自动计算差异）{diffCount>0&&<span style={{color:C.purple,fontWeight:600,marginLeft:6}}>{diffCount} 码有差异</span>}</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:14}}>
-                {sizes.map(sz=>{const sys=inv[checkModal.shoeId]?.[sz]||0;const actual=parseInt(checkForm[sz])||0;const hasDiff=actual!==sys;
-                  return(
-                    <div key={sz} style={{background:hasDiff?C.purpleBg:C.bg,border:`1px solid ${hasDiff?C.purpleBd:C.border}`,borderRadius:10,padding:"10px 12px"}}>
-                      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{sz}<span style={{fontSize:9,color:C.text3,marginLeft:2}}>码</span></div>
-                      <div style={{fontSize:9,color:C.text3,marginBottom:6}}>系统 <span style={{fontWeight:600}}>{sys}</span> 双</div>
-                      <input type="number" min="0" value={checkForm[sz]||""} onChange={e=>setCheckForm({...checkForm,[sz]:e.target.value})} aria-label={`${sz}码实际数量`} placeholder="0" style={{width:"100%",background:"#fff",border:`1px solid ${hasDiff?C.purpleBd:C.border2}`,borderRadius:8,padding:"7px 6px",color:C.text,fontSize:16,fontWeight:800,outline:"none",textAlign:"center"}}/>
-                      {hasDiff&&<div style={{fontSize:9,color:C.purple,fontWeight:600,marginTop:3,textAlign:"center"}}>{actual-sys>0?"+":""}{actual-sys}</div>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.text3,marginBottom:6}}>差异原因</div>
-                <select value={checkReason} onChange={e=>setCheckReason(e.target.value)} aria-label="差异原因" style={{...inp}}>
-                  <option value="">-- 请选择原因 --</option>
-                  <option value="正常损耗">正常损耗</option>
-                  <option value="录入错误">录入错误</option>
-                  <option value="盗窃/丢失">盗窃/丢失</option>
-                  <option value="退货未登记">退货未登记</option>
-                  <option value="调拨差异">调拨差异</option>
-                  <option value="其他">其他</option>
-                </select>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <button onClick={()=>setCheckModal(null)} className="focus-ring" style={{background:"#f5f5f0",border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
-                <button onClick={submitCheck} className="focus-ring" style={{background:C.purple,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>确认盘点{diffCount>0?` (${diffCount}码差异)`:""}</button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 详情弹窗 */}
-      {detailShoe&&(()=>{
-        const shoe=shoes.find(s=>s.id===detailShoe.id)||detailShoe;const shoeLogs=logs.filter(l=>l.shoeId===shoe.id);const total=shoeTotal(shoe.id);const soldOut=sizes.filter(sz=>(inv[shoe.id]?.[sz]||0)===0);const low=sizes.filter(sz=>{const q=inv[shoe.id]?.[sz]||0;return q>0&&q<=lowThresh;});
-        return(
-          <div style={modalWrap(isMobile)} onClick={()=>setDetailShoe(null)} role="dialog" aria-modal="true" aria-label={`${shoe.brand} ${shoe.name} 详情`}>
-            <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:540}} onClick={e=>e.stopPropagation()}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontSize:17,fontWeight:800}}>{shoe.brand} {shoe.name}</div><button onClick={()=>setDetailShoe(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-              <div style={{display:"flex",gap:16,alignItems:"flex-start",marginBottom:18}}>
-                <PhotoBox shoe={shoe} size={100} rounded isAdmin={isAdmin} uploadState={uploadState} onUpload={handlePhotoUpload} onRemove={removePhoto} onZoom={setZoomPhoto}/>
-                <div style={{flex:1}}><div style={{fontSize:12,color:C.text3}}>{shoe.color}</div><div style={{fontSize:28,fontWeight:800,marginTop:6}}>{total}<span style={{fontSize:12,color:C.text3,marginLeft:4}}>双</span></div>{soldOut.length>0&&<div style={{fontSize:11,color:C.red,marginTop:6,fontWeight:500}}>⚠ 断码：{soldOut.join(" / ")} 码</div>}{low.length>0&&!soldOut.length&&<div style={{fontSize:11,color:C.yellow,marginTop:6}}>▲ 低库存：{low.join(" / ")} 码</div>}</div>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:`repeat(${sizes.length},1fr)`,gap:4,marginBottom:16}}>{sizes.map(sz=><SzCell key={sz} qty={inv[shoe.id]?.[sz]||0} sz={sz} thresh={lowThresh}/>)}</div>
-              {isAdmin&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:20}}>
-                <button onClick={()=>{setDetailShoe(null);openBatch("in",shoe.id);}} className="focus-ring" style={{background:C.greenBg,border:`1px solid ${C.greenBd}`,borderRadius:10,padding:12,color:C.green,fontSize:13,fontWeight:700,cursor:"pointer"}}>↑ 入仓</button>
-                <button onClick={()=>{setDetailShoe(null);openBatch("out",shoe.id);}} className="focus-ring" style={{background:C.redBg,border:`1px solid ${C.redBd}`,borderRadius:10,padding:12,color:C.red,fontSize:13,fontWeight:700,cursor:"pointer"}}>↓ 出仓</button>
-                <button onClick={()=>{setDetailShoe(null);openCheck(shoe.id);}} className="focus-ring" style={{background:C.purpleBg,border:`1px solid ${C.purpleBd}`,borderRadius:10,padding:12,color:C.purple,fontSize:13,fontWeight:700,cursor:"pointer"}}>☐ 盘点</button>
-              </div>}
-              <div style={{fontSize:9,color:C.text3,letterSpacing:2,textTransform:"uppercase",marginBottom:10}}>进出流水 · {shoeLogs.length} 条</div>
-              {shoeLogs.length===0?<div style={{color:C.text3,fontSize:13,padding:"16px 0",textAlign:"center"}}>暂无流水记录</div>:shoeLogs.slice(0,20).map(l=>{const isIn=l.type==="in";const isReverse=l.type?.startsWith("reverse");const isAdjust=l.type==="check-adjust";return(<div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.border}`,opacity:isReverse?0.6:1}}><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red,fontSize:13}} aria-hidden="true">{isReverse?"↩":isAdjust?"☐":isIn?"↑":"↓"}</span><div><div style={{fontSize:12}}>{l.size===0?"无码":l.size+"码"} {l.note&&<span style={{color:C.text3}}>· {l.note}</span>}</div><div style={{fontSize:9,color:C.text3}}>{l.date} {fmtTime(l.time)}</div></div></div><div style={{fontSize:16,fontWeight:700,color:isReverse?C.purple:isAdjust?C.accent:isIn?C.green:C.red}}>{(isIn||l.type==="reverse-out"||(isAdjust&&l.qty>0))?"+":"-"}{Math.abs(l.qty)}</div></div>);})}
-              {shoeLogs.length>20&&<div style={{textAlign:"center",color:C.text3,fontSize:11,padding:"8px 0"}}>仅显示最近20条</div>}
-              <button onClick={()=>setDetailShoe(null)} className="focus-ring" style={{width:"100%",marginTop:16,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:13,color:C.text2,fontSize:14,cursor:"pointer"}}>关闭</button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 款式编辑弹窗 */}
-      {shoeModal&&(
-        <div style={modalWrap(isMobile)} role="dialog" aria-modal="true" aria-label={shoeModal==="add"?"新增款式":"编辑款式"}>
-          <div className={isMobile?"slide-up":"zoom-in"} style={{...modalBox(isMobile),maxWidth:440}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}><div style={{fontSize:15,fontWeight:700}}>{shoeModal==="add"?"+ 新增款式":"编辑款式"}</div><button onClick={()=>setShoeModal(null)} aria-label="关闭" style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text3}}>×</button></div>
-            {[{key:"brand",label:"品牌",ph:"Nike / Adidas / New Balance...",type:"text"},{key:"name",label:"款式名称",ph:"Air Max / Stan Smith...",type:"text"},{key:"color",label:"颜色",ph:"黑色 / 白色 / 灰色...",type:"text"},{key:"price",label:"采购单价（元）",ph:"0",type:"number"}].map(f=>(<div key={f.key} style={{marginBottom:14}}><label style={{fontSize:10,color:C.text3,marginBottom:6,display:"block"}}>{f.label}</label><input type={f.type} value={shoeForm[f.key]} onChange={e=>setShoeForm({...shoeForm,[f.key]:e.target.value})} placeholder={f.ph} style={{...inp}}/></div>))}
-            <div style={{fontSize:10,color:C.text3,marginBottom:16,padding:"10px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.border}`}}>📷 保存后在款式卡片上点击图片区域上传</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <button onClick={()=>setShoeModal(null)} className="focus-ring" style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:14,color:C.text2,fontSize:14,cursor:"pointer"}}>取消</button>
-              <button onClick={submitShoe} className="focus-ring" style={{background:C.accent,border:"none",borderRadius:12,padding:14,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>保存</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  React.createElement(ErrorBoundary,null,React.createElement(App))
-);
+  renderShell();
+  if(migratedFromLegacy) showToast("已自动迁移旧版本地数据");
+})();
 </script>
 </body>
 </html>
