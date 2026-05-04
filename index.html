@@ -584,7 +584,7 @@
     if(state.modal.type === "detail") return renderDetail(inv);
   }
   function modalFrame(title, body, foot=""){
-    modalRoot.innerHTML = `<div class="modal-mask" data-action="close-modal"><div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()"><div class="modal-head"><div class="modal-title">${title}</div><button class="btn small soft" data-action="close-modal">关闭</button></div><div class="modal-body">${body}${foot}</div></div></div>`;
+    modalRoot.innerHTML = `<div class="modal-mask"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><div class="modal-title">${title}</div><button class="btn small soft" data-action="close-modal">关闭</button></div><div class="modal-body">${body}${foot}</div></div></div>`;
   }
   function renderAuthModal(){
     const first = !state.auth;
@@ -989,6 +989,7 @@
     }
   });
   modalRoot.addEventListener("click", event => {
+    if(event.target.classList?.contains("modal-mask")) return closeModal();
     const actionEl = event.target.closest("[data-action]");
     if(!actionEl) return;
     const action = actionEl.dataset.action;
