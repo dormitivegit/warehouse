@@ -552,7 +552,7 @@
       ${pageHead("系统设置", "安全、尺码、备份与迁移建议")}
       <section class="grid settings">
         <div class="panel">
-          <div class="setting-row"><div><strong>管理员密码</strong><p>${state.auth ? "已设置管理员密码。登录后 15 分钟无操作会自动退出。" : "尚未设置管理员密码。首次点击管理操作时会要求设置密码。"} 本地版只做轻量防误操作，不能替代后端鉴权。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${state.isAdmin ? `<button class="btn primary" data-action="change-password">修改密码</button><button class="btn soft" data-action="logout">退出</button>` : `<button class="btn primary" data-action="login">登录 / 设置</button>`}</div></div>
+          <div class="setting-row"><div><strong>管理员密码</strong><p>${state.auth ? "已设置管理员密码。登录后 15 分钟无操作会自动退出。" : "尚未设置管理员密码。首次点击管理操作时会要求设置密码。"} 用于防误操作和限制普通查看模式，请定期导出 JSON 备份。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${state.isAdmin ? `<button class="btn primary" data-action="change-password">修改密码</button><button class="btn soft" data-action="logout">退出</button>` : `<button class="btn primary" data-action="login">登录 / 设置</button>`}</div></div>
           <div class="setting-row"><div><strong>低库存阈值</strong><p>当前小于等于 ${state.threshold} 双时标记为低库存。保存需要管理员权限。</p></div><div style="display:flex;gap:8px"><input class="input" id="threshold" type="number" min="1" max="99" value="${state.threshold}" style="width:86px"><button class="btn primary" data-action="save-threshold">保存</button></div></div>
           <div class="setting-row"><div><strong>尺码列表</strong><p>支持半码。修改尺码会影响库存录入界面，保存需要管理员权限。</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><input class="input" id="sizes" value="${esc(state.sizes.join(", "))}" style="min-width:280px"><button class="btn primary" data-action="save-sizes">保存</button></div></div>
         </div>
@@ -591,7 +591,7 @@
     modalFrame(first ? "设置管理员密码" : "管理员登录", `
       <div class="field"><label>${first ? "新密码" : "密码"}</label><input class="input" id="authPassword" type="password" autocomplete="current-password" autofocus placeholder="${first ? "至少 6 位" : "输入管理员密码"}"></div>
       ${first ? `<div class="field"><label>确认密码</label><input class="input" id="authPassword2" type="password" autocomplete="new-password"></div>` : ""}
-      <p style="color:var(--muted);font-size:12px;line-height:1.7">本地密码使用 PBKDF2 派生后保存，但前端仍无法提供真正安全权限。正式使用请接入后端登录。</p>
+      <p style="color:var(--muted);font-size:12px;line-height:1.7">密码会在本机浏览器中加密派生后保存，用于进入管理员模式。请记好密码，并定期导出 JSON 备份。</p>
       <div class="modal-foot"><button class="btn soft" data-action="close-modal">取消</button><button class="btn primary" data-action="submit-auth">${first ? "设置并进入" : "登录"}</button></div>
     `);
   }
