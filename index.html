@@ -919,29 +919,68 @@
     a.click();
     URL.revokeObjectURL(url);
   }
+  function normalizeImportedData(raw){
+    const data = raw?.record && (raw.record.products || raw.record.shoes || raw.record.logs) ? raw.record : raw;
+    const sourceProducts = Array.isArray(data.products) ? data.products : Array.isArray(data.shoes) ? data.shoes : null;
+    const sourceLogs = Array.isArray(data.logs) ? data.logs : null;
+    if(!sourceProducts || !sourceLogs) throw new Error("不支持的备份格式");
+
+    const products = sourceProducts.map(item => ({
+      id: String(item.id || uid()),
+      brand: String(item.brand || ""),
+      name: String(item.name || ""),
+      color: String(item.color || ""),
+      price: Number(item.price) || 0,
+      image: String(item.image || item.photoUrl || "")
+    }));
+
+    const originalById = Object.fromEntries(sourceLogs.map(log => [log.id, log]));
+    const logs = sourceLogs.map(log => {
+      const original = log.reversedId ? originalById[log.reversedId] : null;
+      const type = log.type === "check-adjust" ? "adjust" : String(log.type || "in");
+      return {
+        id: String(log.id || uid()),
+        type,
+        productId: String(log.productId || log.shoeId || ""),
+        size: Number(log.size) === 0 ? BULK : String(log.size || BULK),
+        qty: Number(log.qty) || 0,
+        channel: String(log.channel || original?.channel || ""),
+        note: String(log.note || ""),
+        date: String(log.date || todayKey()),
+        time: String(log.time || new Date().toISOString()),
+        reversedId: log.reversedId ? String(log.reversedId) : undefined
+      };
+    }).filter(log => log.productId);
+
+    return {
+      products,
+      logs,
+      sizes: normalizeSizes(data.sizes || state.sizes),
+      checks: Array.isArray(data.checks) ? data.checks : [],
+      threshold: Number(data.threshold || data.lowThresh || state.threshold) || state.threshold
+    };
+  }
   function importJson(file){
     if(!state.isAdmin) return requireAdmin(() => importJson(file));
     if(!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try{
-        const data = JSON.parse(reader.result);
-        if(!Array.isArray(data.products) || !Array.isArray(data.logs)) throw new Error("格式不正确");
-        state.products = data.products;
-        state.logs = data.logs;
-        state.sizes = normalizeSizes(data.sizes || state.sizes);
-        state.checks = Array.isArray(data.checks) ? data.checks : [];
-        state.threshold = Number(data.threshold) || state.threshold;
+        const imported = normalizeImportedData(JSON.parse(reader.result));
+        state.products = imported.products;
+        state.logs = imported.logs;
+        state.sizes = imported.sizes;
+        state.checks = imported.checks;
+        state.threshold = imported.threshold;
         saveData();
         renderShell();
-        showToast("导入成功");
+        showToast(`导入成功：${state.products.length} 款 / ${state.logs.length} 条流水`);
       }catch(err){
         showToast("导入失败：" + err.message, true);
       }
     };
     reader.readAsText(file);
   }
-
   app.addEventListener("click", event => {
     const pageButton = event.target.closest("[data-page]");
     if(pageButton){
