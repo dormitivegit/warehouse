@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>仓库管理系统 - 优化版</title>
+<!-- 云同步配置：轻量双人共用版。密钥会暴露在前端，适合私人小工具，不适合公开业务系统。 -->
+<meta name="wms-bin-id" content="69a92606ae596e708f61143c">
+<meta name="wms-master-key" content="$2a$10$3YSGRJC241CXsBpeivsTP.NHutZ7G.qgoZyFYBB2IJs4CX/OHeno.">
+<meta name="wms-cdn-name" content="dvkf38yoa">
+<meta name="wms-cdn-preset" content="wms_unsigned">
 <style>
   :root{
     --bg:#f6f7f9;
@@ -170,7 +175,9 @@
     sizes: "wms_opt_sizes_v1",
     checks: "wms_opt_checks_v1",
     threshold: "wms_opt_threshold_v1",
-    auth: "wms_opt_auth_v1"
+    auth: "wms_opt_auth_v1",
+    cloud: "wms_cloud_v1",
+    cdn: "wms_cdn_v1"
   };
   const legacyKeys = {
     products: "wms_shoes_v4",
@@ -216,6 +223,10 @@
   let pendingAdminAction = null;
   let toastTimer = null;
   let adminTimer = null;
+  let syncStatus = "idle";
+  let lastSync = "";
+  let cloudSaveTimer = null;
+  let applyingRemote = false;
 
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
@@ -231,6 +242,31 @@
   }
   function save(key, value){
     localStorage.setItem(key, JSON.stringify(value));
+  }
+  function meta(name){
+    return document.querySelector(`meta[name="${name}"]`)?.content?.trim() || "";
+  }
+  function getCloudConfig(){
+    const saved = load(keys.cloud, {});
+    return {
+      binId: saved.binId || meta("wms-bin-id"),
+      masterKey: saved.masterKey || meta("wms-master-key")
+    };
+  }
+  function getCdnConfig(){
+    const saved = load(keys.cdn, {});
+    return {
+      cloudName: saved.cloudName || meta("wms-cdn-name"),
+      uploadPreset: saved.uploadPreset || meta("wms-cdn-preset")
+    };
+  }
+  function cloudOn(){
+    const cfg = getCloudConfig();
+    return !!cfg.binId && !!cfg.masterKey;
+  }
+  function cdnOn(){
+    const cfg = getCdnConfig();
+    return !!cfg.cloudName && !!cfg.uploadPreset;
   }
   function migrateLegacyData(){
     const hasNewData = localStorage.getItem(keys.products) || localStorage.getItem(keys.logs);
@@ -280,6 +316,7 @@
     save(keys.sizes, state.sizes);
     save(keys.checks, state.checks);
     save(keys.threshold, state.threshold);
+    if(!applyingRemote) scheduleCloudSave();
   }
   function uid(){
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -329,6 +366,110 @@
       if(log.type === "adjust") inv[log.productId][size] += qty;
     });
     return inv;
+  }
+  function toLegacyShoe(product){
+    return {
+      id: product.id,
+      brand: product.brand,
+      name: product.name,
+      color: product.color,
+      price: Number(product.price) || 0,
+      photoUrl: product.image || ""
+    };
+  }
+  function toLegacyLog(log){
+    return {
+      id: log.id,
+      type: log.type === "adjust" ? "check-adjust" : log.type,
+      shoeId: log.productId,
+      size: log.size === BULK ? 0 : log.size,
+      qty: Number(log.qty) || 0,
+      note: log.note || "",
+      channel: log.channel || "",
+      date: log.date,
+      time: log.time,
+      ...(log.reversedId ? {reversedId: log.reversedId} : {})
+    };
+  }
+  function cloudPayload(){
+    return {
+      version: 3,
+      updatedAt: new Date().toISOString(),
+      products: state.products,
+      shoes: state.products.map(toLegacyShoe),
+      logs: state.logs.map(toLegacyLog),
+      sizes: state.sizes,
+      checks: state.checks,
+      threshold: state.threshold
+    };
+  }
+  async function cloudFetch(){
+    const cfg = getCloudConfig();
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
+      headers: {"X-Master-Key": cfg.masterKey}
+    });
+    if(!res.ok) throw new Error("云端读取失败");
+    const data = await res.json();
+    return data.record || {};
+  }
+  async function cloudSaveNow(){
+    if(!cloudOn()) return;
+    const cfg = getCloudConfig();
+    syncStatus = "syncing";
+    renderShell();
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": cfg.masterKey,
+        "X-Bin-Versioning": "false"
+      },
+      body: JSON.stringify(cloudPayload())
+    });
+    if(!res.ok) throw new Error("云端保存失败");
+    syncStatus = "ok";
+    lastSync = new Date().toLocaleTimeString("zh-CN", {hour:"2-digit", minute:"2-digit"});
+    renderShell();
+  }
+  function scheduleCloudSave(){
+    if(!cloudOn()) return;
+    clearTimeout(cloudSaveTimer);
+    syncStatus = "syncing";
+    cloudSaveTimer = setTimeout(async () => {
+      try{
+        await cloudSaveNow();
+      }catch(err){
+        syncStatus = "error";
+        renderShell();
+        showToast(err.message, true);
+      }
+    }, 900);
+  }
+  async function pullCloud(quiet=false){
+    if(!cloudOn()) return;
+    if(!quiet){
+      syncStatus = "syncing";
+      renderShell();
+    }
+    try{
+      const imported = normalizeImportedData(await cloudFetch());
+      applyingRemote = true;
+      state.products = imported.products;
+      state.logs = imported.logs;
+      state.sizes = imported.sizes;
+      state.checks = imported.checks;
+      state.threshold = imported.threshold;
+      saveData();
+      applyingRemote = false;
+      syncStatus = "ok";
+      lastSync = new Date().toLocaleTimeString("zh-CN", {hour:"2-digit", minute:"2-digit"});
+      renderShell();
+    }catch(err){
+      applyingRemote = false;
+      syncStatus = "error";
+      renderShell();
+      if(!quiet) showToast(err.message, true);
+    }
   }
   function totalOf(inv, id){
     const stock = inv[id] || {};
@@ -428,7 +569,7 @@
     app.innerHTML = `
       <div class="app">
         <aside class="sidebar">
-          <div class="brand"><small>Warehouse</small><strong>仓库管理</strong><div style="margin-top:10px">${adminBadge()}</div></div>
+          <div class="brand"><small>Warehouse</small><strong>仓库管理</strong><div style="margin-top:10px;display:grid;gap:6px">${adminBadge()}${syncBadge()}</div></div>
           <nav class="nav">${nav.map(([key,label]) => `<button data-page="${key}" class="${state.page === key ? "active" : ""}">${label}</button>`).join("")}</nav>
           <div class="sidebar-foot">${state.isAdmin
             ? `<button class="btn soft" style="width:100%" data-action="logout">退出管理员</button>`
@@ -436,7 +577,7 @@
           </div>
         </aside>
         <main class="main">
-          <div class="mobile-bar"><div><div style="font-size:10px;color:var(--faint);letter-spacing:2px;text-transform:uppercase">Warehouse</div><div style="font-weight:850;font-size:20px">仓库管理</div></div>${adminBadge()}</div>
+          <div class="mobile-bar"><div><div style="font-size:10px;color:var(--faint);letter-spacing:2px;text-transform:uppercase">Warehouse</div><div style="font-weight:850;font-size:20px">仓库管理</div></div><div style="display:grid;gap:6px;justify-items:end">${adminBadge()}${syncBadge()}</div></div>
           ${renderPage(inv)}
         </main>
         <nav class="mobile-nav">${nav.map(([key,label]) => `<button data-page="${key}" class="${state.page === key ? "active" : ""}">${label}</button>`).join("")}</nav>
@@ -445,6 +586,13 @@
   }
   function adminBadge(){
     return state.isAdmin ? `<span class="badge green">管理员已登录</span>` : `<span class="badge">查看模式</span>`;
+  }
+  function syncBadge(){
+    if(!cloudOn()) return `<span class="badge">本地模式</span>`;
+    if(syncStatus === "syncing") return `<span class="badge blue">同步中</span>`;
+    if(syncStatus === "ok") return `<button class="badge green" style="cursor:pointer" data-action="pull-cloud">已同步${lastSync ? " " + esc(lastSync) : ""}</button>`;
+    if(syncStatus === "error") return `<button class="badge red" style="cursor:pointer" data-action="pull-cloud">同步失败</button>`;
+    return `<button class="badge blue" style="cursor:pointer" data-action="pull-cloud">云同步</button>`;
   }
   function renderPage(inv){
     if(state.page === "overview") return renderOverview(inv);
@@ -560,6 +708,8 @@
           <div class="setting-row"><div><strong>导出 JSON 备份</strong><p>包含款式、流水、尺码、盘点记录，可完整恢复。</p></div><button class="btn green" data-action="export-json">导出 JSON</button></div>
           <div class="setting-row"><div><strong>导出 CSV 库存表</strong><p>已做逗号、引号、换行转义，Excel 打开更稳。</p></div><button class="btn green" data-action="export-csv">导出 CSV</button></div>
           <div class="setting-row"><div><strong>导入恢复</strong><p>导入前会覆盖当前本地数据，请先导出备份。</p></div><button class="btn soft" data-action="pick-import">导入 JSON</button><input class="hidden" type="file" accept=".json,application/json" id="importFile"></div>
+          <div class="setting-row"><div><strong>云同步</strong><p>${cloudOn() ? "JSONBin 已配置。两个人打开同一个页面会共用云端库存。" : "未配置 JSONBin，当前只保存在本机浏览器。"}</p></div><button class="btn soft" data-action="pull-cloud">从云端刷新</button></div>
+          <div class="setting-row"><div><strong>图片上传</strong><p>${cdnOn() ? "Cloudinary 已配置，图片会上传到云端并保存 URL。" : "未配置 Cloudinary，图片只保存在本机浏览器。"}</p></div><span class="badge ${cdnOn() ? "green" : ""}">${cdnOn() ? "已启用" : "本地"}</span></div>
         </div>
         <div class="panel" style="border-color:#fecaca;background:var(--red-soft)">
           <strong>重要安全提醒</strong>
@@ -865,11 +1015,17 @@
     if(!file) return;
     if(!file.type.startsWith("image/")) return showToast("请选择图片文件", true);
     if(file.size > 5 * 1024 * 1024) return showToast("图片不要超过 5MB", true);
-    const dataUrl = await compressImage(file);
-    state.products = state.products.map(p => p.id === productId ? {...p, image:dataUrl} : p);
-    saveData();
-    renderShell();
-    showToast("图片已保存到本地");
+    try{
+      showToast(cdnOn() ? "图片上传中" : "图片保存中");
+      const dataUrl = await compressImage(file);
+      const image = cdnOn() ? await uploadToCloudinary(dataUrl) : dataUrl;
+      state.products = state.products.map(p => p.id === productId ? {...p, image} : p);
+      saveData();
+      renderShell();
+      showToast(cdnOn() ? "图片已上传并同步" : "图片已保存到本地");
+    }catch(err){
+      showToast("图片处理失败：" + err.message, true);
+    }
   }
   function compressImage(file){
     return new Promise((resolve, reject) => {
@@ -893,6 +1049,20 @@
       };
       reader.readAsDataURL(file);
     });
+  }
+  async function uploadToCloudinary(dataUrl){
+    const cfg = getCdnConfig();
+    const fd = new FormData();
+    fd.append("file", dataUrl);
+    fd.append("upload_preset", cfg.uploadPreset);
+    fd.append("folder", "wms_shoes");
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/upload`, {
+      method: "POST",
+      body: fd
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(data.error?.message || "上传失败");
+    return String(data.secure_url || "").replace("/upload/", "/upload/c_fill,w_500,h_500,q_auto,f_auto/");
   }
   function exportJson(){
     const data = {version:1, exportedAt:new Date().toISOString(), products:state.products, logs:state.logs, sizes:state.sizes, checks:state.checks, threshold:state.threshold};
@@ -919,11 +1089,69 @@
     a.click();
     URL.revokeObjectURL(url);
   }
+  function parseImportText(text){
+    const clean = String(text || "").replace(/^\uFEFF/, "").trim();
+    try{
+      return JSON.parse(clean);
+    }catch{
+      const start = clean.indexOf("{");
+      const end = clean.lastIndexOf("}");
+      if(start >= 0 && end > start) return JSON.parse(clean.slice(start, end + 1));
+      throw new Error("文件不是有效的 JSON");
+    }
+  }
+  function maybeJson(value){
+    if(typeof value !== "string") return value;
+    const text = value.replace(/^\uFEFF/, "").trim();
+    if(!text) return value;
+    try{return JSON.parse(text);}catch{return value;}
+  }
+  function fromStorageDump(raw){
+    const source = raw?.localStorage && typeof raw.localStorage === "object" ? raw.localStorage : raw;
+    if(!source || typeof source !== "object" || Array.isArray(source)) return null;
+    const readAny = (...names) => {
+      for(const name of names){
+        if(source[name] !== undefined) return maybeJson(source[name]);
+      }
+      return undefined;
+    };
+    const storedProducts = readAny(keys.products, legacyKeys.products, legacyKeys.productsV3);
+    const storedLogs = readAny(keys.logs, legacyKeys.logs, legacyKeys.logsV3);
+    if(!Array.isArray(storedProducts) || !Array.isArray(storedLogs)) return null;
+    const storedSizes = readAny(keys.sizes, legacyKeys.sizes);
+    const storedChecks = readAny(keys.checks, legacyKeys.checks);
+    const storedThreshold = readAny(keys.threshold, legacyKeys.threshold, legacyKeys.thresholdV1);
+    return {
+      products: storedProducts,
+      logs: storedLogs,
+      sizes: Array.isArray(storedSizes) ? storedSizes : undefined,
+      checks: Array.isArray(storedChecks) ? storedChecks : [],
+      threshold: Number(storedThreshold) || undefined
+    };
+  }
+  function findBackupPayload(raw, depth=0, seen=new Set()){
+    const data = maybeJson(raw);
+    if(!data || typeof data !== "object" || depth > 5 || seen.has(data)) return null;
+    seen.add(data);
+    const storagePayload = fromStorageDump(data);
+    if(storagePayload) return storagePayload;
+    if((Array.isArray(data.products) || Array.isArray(data.shoes)) && Array.isArray(data.logs)) return data;
+    if(data.record){
+      const found = findBackupPayload(data.record, depth + 1, seen);
+      if(found) return found;
+    }
+    for(const value of Object.values(data)){
+      const found = findBackupPayload(value, depth + 1, seen);
+      if(found) return found;
+    }
+    return null;
+  }
   function normalizeImportedData(raw){
-    const data = raw?.record && (raw.record.products || raw.record.shoes || raw.record.logs) ? raw.record : raw;
+    const data = findBackupPayload(raw);
+    if(!data) throw new Error("不支持的备份格式，请导入 JSON 备份或 localStorage 导出文件");
     const sourceProducts = Array.isArray(data.products) ? data.products : Array.isArray(data.shoes) ? data.shoes : null;
     const sourceLogs = Array.isArray(data.logs) ? data.logs : null;
-    if(!sourceProducts || !sourceLogs) throw new Error("不支持的备份格式");
+    if(!sourceProducts || !sourceLogs) throw new Error("不支持的备份格式，请导入 JSON 备份或 localStorage 导出文件");
 
     const products = sourceProducts.map(item => ({
       id: String(item.id || uid()),
@@ -966,7 +1194,7 @@
     const reader = new FileReader();
     reader.onload = () => {
       try{
-        const imported = normalizeImportedData(JSON.parse(reader.result));
+        const imported = normalizeImportedData(parseImportText(reader.result));
         state.products = imported.products;
         state.logs = imported.logs;
         state.sizes = imported.sizes;
@@ -995,6 +1223,7 @@
       const id = actionEl.dataset.id;
       if(action === "login") return requireAdmin(() => {});
       if(action === "logout") return logoutAdmin();
+      if(action === "pull-cloud") return pullCloud();
       if(action === "open-stock") return openStock(actionEl.dataset.mode, id);
       if(action === "pick-check") return requireAdmin(() => { state.modal = {type:"pick-check"}; renderShell(); });
       if(action === "reverse-log") return reverseLog(id);
@@ -1089,6 +1318,11 @@
   });
 
   renderShell();
+  if(cloudOn()){
+    pullCloud(true);
+    setInterval(() => pullCloud(true), 60000);
+    window.addEventListener("focus", () => pullCloud(true));
+  }
   if(migratedFromLegacy) showToast("已自动迁移旧版本地数据");
 })();
 </script>
